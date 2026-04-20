@@ -11,12 +11,13 @@ Fitur utama:
 
 ## Struktur
 
-- `client`: React + Vite
-- `server`: Express + file upload lokal + JSON store
+Frontend ini ada di folder `display-fe` dan terhubung ke backend Express di folder `server`.
 
 ## Menjalankan project
 
 ### 1. Install dependency
+
+Jalankan dari root repo:
 
 ```bash
 cd /Users/aandiyanti/Documents/RnD/PROJECT/display-harga
@@ -39,7 +40,7 @@ Terminal baru:
 npm run dev:client
 ```
 
-Frontend default berjalan di `http://localhost:3010`.
+Frontend default berjalan di `http://localhost:8080`.
 
 
 ## Fitur
@@ -49,9 +50,6 @@ Frontend default berjalan di `http://localhost:3010`.
 - Layar display harga dengan rotasi media otomatis
 - Fallback hero default saat media belum tersedia
 
-## Penyimpanan data
+## Data
 
-- kategori: `server/data/categories.json`
-- media: `server/data/media.json`
-- media upload: `server/uploads`
-# display-harga
+Metadata tersimpan di MongoDB (lihat `.env` di root). File upload video disimpan di `server/uploads`.

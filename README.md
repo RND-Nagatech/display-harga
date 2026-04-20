@@ -47,7 +47,7 @@ Terminal baru:
 npm run dev:fe
 ```
 
-Frontend default berjalan di `http://localhost:5173`.
+Frontend default berjalan di `http://localhost:8080`.
 
 Jika backend tidak di `http://localhost:7118`, buat file `display-fe/.env` lalu isi `VITE_API_BASE_URL` (lihat `display-fe/.env.example`).
 
@@ -84,7 +84,7 @@ Klik tombol `Light mode` / `Dark mode` di sidebar. Preferensi disimpan di browse
 
 Menu `TV Display` di sidebar akan membuka tab baru ke route:
 
-- `http://localhost:5173/display`
+- `http://localhost:8080/display`
 
 Tampilan ini dibuat full-viewport dan auto-scale untuk rasio TV (desain dasar 1920x1080). Untuk fullscreen beneran (tanpa UI browser), gunakan F11 (browser).
 
@@ -104,9 +104,6 @@ Data disimpan di MongoDB collections:
 - Layar display harga dengan rotasi media otomatis
 - Fallback hero default saat media belum tersedia
 
-## Penyimpanan data
+## Media upload (server)
 
-- kategori: `server/data/categories.json`
-- media: `server/data/media.json`
-- media upload: `server/uploads`
-# display-harga
+File video upload disimpan di `server/uploads` (metadata tetap di MongoDB).
