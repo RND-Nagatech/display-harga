@@ -1,0 +1,16 @@
+{
+  "name": "display-harga",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "display-fe",
+    "server"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev:fe": "npm --workspace display-fe run dev",
+    "dev:server": "npm --workspace server run dev",
+    "build:fe": "npm --workspace display-fe run build",
+    "start:server": "npm --workspace server run start"
+  }
+}
