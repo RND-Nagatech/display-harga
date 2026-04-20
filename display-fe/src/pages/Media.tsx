@@ -132,10 +132,12 @@ export default function MediaPage() {
     <>
       <PageHeader
         title="Master Media"
-        description="Tambahkan video dari komputer atau link YouTube. Akan diputar bergantian di Display TV."
+        description="Tambahkan link YouTube. Akan diputar bergantian di Display TV."
         action={
           <div className="flex gap-2">
+            {/* Upload lokal disembunyikan sementara. Logic uploadMedia/handleFile tetap dipertahankan agar mudah diaktifkan lagi.
             <Button variant="outline" onClick={() => openNew("local")}><Upload className="mr-2 h-4 w-4" /> Upload Lokal</Button>
+            */}
             <Button onClick={() => openNew("youtube")}><Youtube className="mr-2 h-4 w-4" /> YouTube</Button>
           </div>
         }
@@ -203,11 +205,14 @@ export default function MediaPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{draft.id ? "Edit Media" : "Tambah Media"}</DialogTitle></DialogHeader>
           <Tabs value={draft.type} onValueChange={(v)=>setDraft({...draft, type: v as MediaDraft["type"], src: "", file: null })}>
-            <TabsList className="grid grid-cols-2 w-full">
+            <TabsList className="grid grid-cols-1 w-full">
+              {/* Upload lokal disembunyikan sementara. Buka kembali blok ini jika fitur file lokal ingin dipakai lagi.
               <TabsTrigger value="local"><Upload className="mr-2 h-4 w-4" />File Lokal</TabsTrigger>
+              */}
               <TabsTrigger value="youtube"><Youtube className="mr-2 h-4 w-4" />YouTube</TabsTrigger>
             </TabsList>
 
+            {/* Upload lokal disembunyikan sementara. Logic upload tetap ada di file ini dan backend.
             <TabsContent value="local" className="space-y-4 mt-4">
               <div>
                 <Label>Pilih file video</Label>
@@ -224,6 +229,7 @@ export default function MediaPage() {
                 )}
               </div>
             </TabsContent>
+            */}
 
             <TabsContent value="youtube" className="space-y-4 mt-4">
               <div>

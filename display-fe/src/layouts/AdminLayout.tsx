@@ -18,7 +18,7 @@ import { LogOut } from "lucide-react";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/items", label: "Master Item", icon: Package },
+  { to: "/categories", label: "Master Kategori", icon: Package },
   { to: "/media", label: "Master Media", icon: Film },
   { to: "/display", label: "Display TV", icon: Tv, external: true },
   { to: "/users", label: "Manage User", icon: Users },

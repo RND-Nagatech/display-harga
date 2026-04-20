@@ -1,214 +1,492 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getDisplay, type Item, type Media } from "@/lib/backend";
-import { Building2 } from "lucide-react";
+import { getDisplay, type Category, type Media } from "@/lib/backend";
+import goldHeroImage from "@/assets/gold-tv-hero.png";
+import "./DisplayTVMonolith.css";
 
-const ITEMS_PER_SIDE = 8;
-const PAGE_INTERVAL_MS = 8000;
+const REFRESH_INTERVAL = 30_000;
+const CLOCK_INTERVAL = 1_000;
+const HIGHLIGHT_INTERVAL = 5_000;
+const PAGE_ROTATE_INTERVAL = 8_000;
+const HERO_MEDIA_ROTATE_INTERVAL = 15_000;
+const ROWS_PER_SIDE = 8;
+
+type PriceGroup = {
+  id: string;
+  kode_group: string;
+  nama_group: string;
+  harga: number;
+  harga_buyback: number;
+};
 
 export default function DisplayTV() {
-  const { data } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["display"],
     queryFn: getDisplay,
-    refetchInterval: 30_000,
+    refetchInterval: REFRESH_INTERVAL,
   });
 
-  const items = data?.items || [];
-  const media = data?.media || [];
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [mediaIndex, setMediaIndex] = useState(0);
+  const [isHeroMediaReady, setIsHeroMediaReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
   const settings = data?.system;
+  const tokoName = settings?.companyName?.trim() || "AURUM MONOLITH";
+  const currentYear = new Date().getFullYear();
 
-  const [page, setPage] = useState(0);
-  const perPage = ITEMS_PER_SIDE * 2;
-  const totalPages = Math.max(1, Math.ceil(items.length / perPage));
-  const pageItems = useMemo(() => slicePage(items, page, perPage), [items, page, perPage]);
-  const leftItems = pageItems.slice(0, ITEMS_PER_SIDE);
-  const rightItems = pageItems.slice(ITEMS_PER_SIDE, perPage);
-
-  useEffect(() => {
-    setPage(0);
-  }, [items.length]);
+  const groups = useMemo(() => normalizeCategories(data?.categories || []), [data?.categories]);
+  const heroMedia = useMemo(() => (data?.media || []).filter((item) => item.isActive !== false), [data?.media]);
+  const activeHeroMedia = heroMedia[mediaIndex] || null;
 
   useEffect(() => {
-    const t = window.setInterval(() => setPage((p) => (p + 1) % totalPages), PAGE_INTERVAL_MS);
-    return () => window.clearInterval(t);
-  }, [totalPages]);
-
-  // Clock
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
+    document.body.classList.add("tv-monolith-active");
+    return () => document.body.classList.remove("tv-monolith-active");
   }, []);
-  const time = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const date = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  useEffect(() => {
+    if (data) {
+      setLastUpdated(new Date());
+    }
+  }, [data]);
+
+  useEffect(() => {
+    const clockTimer = window.setInterval(() => setCurrentTime(new Date()), CLOCK_INTERVAL);
+    return () => window.clearInterval(clockTimer);
+  }, []);
+
+  useEffect(() => {
+    setPageIndex(0);
+    setHighlightIndex(0);
+  }, [groups.length]);
+
+  useEffect(() => {
+    if (groups.length <= 1) {
+      setHighlightIndex(0);
+      return undefined;
+    }
+
+    const highlightTimer = window.setInterval(() => {
+      setHighlightIndex((current) => (current + 1) % groups.length);
+    }, HIGHLIGHT_INTERVAL);
+
+    return () => window.clearInterval(highlightTimer);
+  }, [groups.length]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(groups.length / (ROWS_PER_SIDE * 2)));
+
+    if (pageIndex >= totalPages) {
+      setPageIndex(0);
+    }
+
+    if (totalPages <= 1) {
+      return undefined;
+    }
+
+    const pageTimer = window.setInterval(() => {
+      setPageIndex((current) => (current + 1) % totalPages);
+    }, PAGE_ROTATE_INTERVAL);
+
+    return () => window.clearInterval(pageTimer);
+  }, [groups.length, pageIndex]);
+
+  useEffect(() => {
+    if (mediaIndex >= heroMedia.length) {
+      setMediaIndex(0);
+    }
+  }, [heroMedia.length, mediaIndex]);
+
+  useEffect(() => {
+    setIsHeroMediaReady(!activeHeroMedia);
+  }, [activeHeroMedia?.id]);
+
+  useEffect(() => {
+    if (!activeHeroMedia || heroMedia.length <= 1) {
+      return undefined;
+    }
+
+    if (activeHeroMedia.type === "youtube") {
+      const timer = window.setTimeout(() => {
+        setMediaIndex((current) => (current + 1) % heroMedia.length);
+      }, (activeHeroMedia.durationSec || HERO_MEDIA_ROTATE_INTERVAL / 1000) * 1000);
+
+      return () => window.clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [activeHeroMedia, heroMedia.length]);
+
+  const highestPrice = useMemo(() => {
+    if (!groups.length) {
+      return null;
+    }
+
+    return groups.reduce<PriceGroup | null>(
+      (currentMax, item) => (!currentMax || item.harga > currentMax.harga ? item : currentMax),
+      null,
+    );
+  }, [groups]);
+
+  const highlightedGroup = groups[highlightIndex] || groups[0] || null;
+  const pagedGroups = useMemo(() => {
+    const pageSize = ROWS_PER_SIDE * 2;
+    const startIndex = pageIndex * pageSize;
+    return groups.slice(startIndex, startIndex + pageSize);
+  }, [groups, pageIndex]);
+  const leftGroups = pagedGroups.slice(0, ROWS_PER_SIDE);
+  const rightGroups = pagedGroups.slice(ROWS_PER_SIDE, ROWS_PER_SIDE * 2);
+  const tickerGroups = groups.slice(0, 8);
+  const statusText = isError ? "Koneksi bermasalah" : lastUpdated ? "Sinkron otomatis aktif" : "Menunggu data";
+  const headlineText = "MURNI • ELEGAN • BERNILAI TINGGI";
+  const headlineScale = getHeadlineScale(headlineText);
+  const youtubeEmbedUrl = buildYoutubeEmbedUrl(activeHeroMedia, heroMedia);
+
+  const goToNextMedia = () => {
+    if (heroMedia.length <= 1) {
+      return;
+    }
+
+    setIsHeroMediaReady(false);
+    setMediaIndex((current) => (current + 1) % heroMedia.length);
+  };
 
   return (
-    <div className="tv-theme min-h-screen flex flex-col overflow-hidden">
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-8 py-5 border-b border-tv-border">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-tv-accent/15 text-tv-accent">
-            <Building2 className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-tv-muted">{settings?.companyCode || ""}</p>
-            <h1 className="text-xl font-semibold text-tv-text">{settings?.companyName || "Display TV"}</h1>
-          </div>
+    <div className="tv-monolith-screen">
+      <div className="tv-monolith-ambient tv-monolith-ambient-left" />
+      <div className="tv-monolith-ambient tv-monolith-ambient-right" />
+
+      <header className="tv-monolith-topbar">
+        <div className="tv-monolith-brand-block">
+          <div className="tv-monolith-brand">{tokoName}</div>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-[0.2em] text-tv-muted">{date}</p>
-            <p className="text-2xl font-semibold text-tv-text tabular-nums">{time}</p>
-          </div>
+
+        <div className="tv-monolith-market-block">
+          <div className="tv-monolith-market-title">Live Market Data</div>
+          <div className="tv-monolith-market-subtitle">{formatDateTime(currentTime)}</div>
         </div>
       </header>
 
-      {/* Main area */}
-      <div className="flex-1 grid grid-cols-12 gap-6 px-6 py-6 min-h-0">
-        <PriceColumn items={leftItems} side="left" />
-
-        <div className="col-span-6 flex flex-col gap-4 min-h-0">
-          <div className="flex-1 rounded-2xl tv-surface tv-glow overflow-hidden relative">
-            <MediaPlayer media={media} />
-          </div>
-
-          <div className="rounded-xl tv-surface px-5 py-4 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-tv-muted">Total Item Tampil</p>
-              <p className="text-2xl font-bold text-tv-text">{items.length}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-tv-muted">Hubungi Kami</p>
-              <p className="text-base font-semibold text-tv-text">{settings?.phone || "-"}</p>
-            </div>
-          </div>
+      <main className="tv-monolith-main">
+        <div className="tv-monolith-left">
+          <PriceTable title="Price Overview" rows={leftGroups} pageKey={`left-${pageIndex}`} />
         </div>
 
-        <PriceColumn items={rightItems} side="right" />
+        <section className="tv-monolith-center">
+          <div className="tv-monolith-hero">
+            <div className={`tv-monolith-hero-media ${activeHeroMedia && !isHeroMediaReady ? "is-media-loading" : ""}`.trim()}>
+              {!activeHeroMedia || !isHeroMediaReady ? <HeroFallback /> : null}
+
+              {activeHeroMedia?.type === "youtube" && youtubeEmbedUrl ? (
+                <iframe
+                  key={`${activeHeroMedia.id}-${mediaIndex}`}
+                  src={youtubeEmbedUrl}
+                  className="tv-monolith-hero-video tv-monolith-hero-youtube"
+                  title={activeHeroMedia.label || "YouTube Hero"}
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  onLoad={() => setIsHeroMediaReady(true)}
+                />
+              ) : activeHeroMedia ? (
+                <video
+                  key={`${activeHeroMedia.id}-${mediaIndex}`}
+                  ref={videoRef}
+                  src={activeHeroMedia.url}
+                  className="tv-monolith-hero-video"
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="auto"
+                  controls={false}
+                  loop={heroMedia.length === 1}
+                  onCanPlay={() => setIsHeroMediaReady(true)}
+                  onLoadedData={() => setIsHeroMediaReady(true)}
+                  onEnded={goToNextMedia}
+                  onError={goToNextMedia}
+                />
+              ) : null}
+            </div>
+
+            {!activeHeroMedia ? <HeroFallback /> : null}
+
+            {!activeHeroMedia || !isHeroMediaReady ? (
+              <>
+                <div className="tv-monolith-spot-card">
+                  <GoldOrbit className="is-card" />
+                  <div className="tv-monolith-spot-label">Harga Emas Tertinggi</div>
+                  <div className="tv-monolith-spot-price">{formatCurrency(highestPrice?.harga)}</div>
+                  <div className="tv-monolith-spot-meta">{highestPrice?.kode_group || "Belum tersedia"}</div>
+                </div>
+
+                <div className="tv-monolith-hero-copy">
+                  <h1 style={{ "--headline-scale": headlineScale } as React.CSSProperties}>{headlineText}</h1>
+                  <p>Keunggulan Nilai Emas Terbaik.</p>
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          <div className="tv-monolith-info-cards">
+            <article className="tv-monolith-info-card">
+              <div className="tv-monolith-info-icon">●</div>
+              <h3>Status</h3>
+              <p>{statusText}</p>
+            </article>
+
+            <article className="tv-monolith-info-card is-highlight">
+              <div className="tv-monolith-info-icon">●</div>
+              <h3>Highlight Harga</h3>
+              <p>
+                {highlightedGroup?.kode_group || "Belum ada"}{" "}
+                {highlightedGroup ? `- ${formatCurrency(highlightedGroup.harga)}` : ""}
+              </p>
+            </article>
+
+            <article className="tv-monolith-info-card" id="highlight-buyback-card">
+              <div className="tv-monolith-info-icon">●</div>
+              <h3>Highlight Harga Buyback</h3>
+              <p>
+                {highlightedGroup?.kode_group || "Belum ada"}{" "}
+                {highlightedGroup ? `- ${formatCurrency(highlightedGroup.harga_buyback)}` : ""}
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <div className="tv-monolith-right">
+          <PriceTable title="Price Overview" rows={rightGroups} pageKey={`right-${pageIndex}`} />
+        </div>
+      </main>
+
+      <div className="tv-monolith-bottom-strip">
+        <div className="tv-monolith-sync-status">
+          <span className={`tv-monolith-status-dot ${isError ? "is-error" : "is-ok"}`} />
+          <span>{statusText}</span>
+        </div>
+        <RunningTicker items={tickerGroups} />
+        <div className="tv-monolith-last-update">
+          {isLoading ? "Memuat data..." : `Update terakhir ${formatClock(lastUpdated)}`}
+        </div>
       </div>
 
-      {/* Marquee */}
-      <footer className="border-t border-tv-border bg-tv-surface/50 backdrop-blur overflow-hidden">
-        <div className="flex whitespace-nowrap py-3 animate-marquee">
-          {[...items, ...items].map((i, idx) => (
-            <span key={idx} className="flex items-center gap-3 px-8 text-sm">
-              <span className="text-tv-muted">{i.code}</span>
-              <span className="text-tv-text font-medium">{i.name}</span>
-              <span className="tv-price-text font-bold">{formatIDR(i.price)}</span>
-              <span className="text-tv-muted">/ {i.unit || "pcs"}</span>
-              <span className="text-tv-border">•</span>
-            </span>
-          ))}
-        </div>
+      <footer className="tv-monolith-footer tv-monolith-footer-copyright">
+        <div className="tv-monolith-copyright">©Nagatech Sistem Integrator - {currentYear}</div>
       </footer>
     </div>
   );
 }
 
-function PriceColumn({ items, side }: { items: Item[]; side: "left" | "right" }) {
+function PriceTable({ title, rows, pageKey }: { title: string; rows: PriceGroup[]; pageKey: string }) {
   return (
-    <div className="col-span-3 flex flex-col gap-3 min-h-0 overflow-hidden">
-      <div className="flex items-center justify-between px-2">
-        <p className="text-[10px] uppercase tracking-[0.25em] text-tv-muted">
-          {side === "left" ? "Daftar Harga" : "Daftar Harga"}
-        </p>
-        <span className="text-[10px] text-tv-muted">{items.length} item</span>
+    <section className="tv-monolith-table">
+      <div className="tv-monolith-table-heading">
+        <span className="tv-monolith-table-bar" />
+        <h2>{title === "Price Overview" ? "Harga Emas Terkini" : title}</h2>
       </div>
 
-      <div className="flex-1 flex flex-col gap-2 overflow-hidden">
-        {items.map((i) => (
-          <div
-            key={i.id}
-            className="tv-surface rounded-xl px-4 py-3 flex items-center justify-between hover:border-tv-accent/40 transition-colors"
-          >
-            <div className="min-w-0">
-              <p className="text-[10px] font-mono text-tv-muted">{i.code}</p>
-              <p className="text-sm font-semibold text-tv-text truncate">{i.name}</p>
-              <p className="text-[10px] text-tv-muted uppercase tracking-wider">{i.category}</p>
-            </div>
-            <div className="text-right pl-3">
-              <p className="tv-price-text text-lg font-extrabold leading-tight tabular-nums">{formatIDR(i.price)}</p>
-              <p className="text-[10px] text-tv-muted">/ {i.unit || "pcs"}</p>
-            </div>
+      <div className="tv-monolith-buyback-note">
+        <span>*</span>
+        Harga buyback mengacu pada potongan terendah.
+      </div>
+
+      <div className="tv-monolith-table-head">
+        <span>Kategori</span>
+        <span>Harga</span>
+        <span>Harga Buyback</span>
+      </div>
+
+      <div className="tv-monolith-table-list" key={`${title}-${pageKey}`}>
+        {rows.length > 0 ? (
+          rows.map((item, index) => (
+            <article
+              className={`tv-monolith-table-row ${index === 0 ? "is-featured" : ""}`}
+              key={`${item.id}-${pageKey}`}
+              style={{ animationDelay: `${index * 90}ms` }}
+            >
+              <GoldOrbit className="is-row" />
+              <span className="tv-monolith-table-kode">{item.kode_group}</span>
+              <span className="tv-monolith-table-price">{formatPrice(item.harga)}</span>
+              <span className="tv-monolith-table-buyback">{formatPrice(item.harga_buyback)}</span>
+            </article>
+          ))
+        ) : (
+          <div className="tv-monolith-table-empty">Data Harga Emas</div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function RunningTicker({ items }: { items: PriceGroup[] }) {
+  const tickerItems = items.length > 0
+    ? [...items, ...items]
+    : [{ id: "empty", kode_group: "INFO", nama_group: "Data belum tersedia", harga: 0, harga_buyback: 0 }];
+
+  return (
+    <div className="tv-monolith-ticker">
+      <div className="tv-monolith-ticker-track">
+        {tickerItems.map((item, index) => (
+          <div className="tv-monolith-ticker-item" key={`${item.id}-${index}`}>
+            <span className="tv-monolith-ticker-kode">{item.kode_group}</span>
+            <span className="tv-monolith-ticker-name">{shortenName(item.nama_group, 20)}</span>
+            <span className="tv-monolith-ticker-price">{formatCurrency(item.harga)}</span>
           </div>
         ))}
-        {items.length === 0 && (
-          <div className="tv-surface rounded-xl flex-1 flex items-center justify-center text-tv-muted text-sm">
-            Belum ada item
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-function MediaPlayer({ media }: { media: Media[] }) {
-  const [idx, setIdx] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const ytTimerRef = useRef<number | null>(null);
-
-  const current = media[idx];
-  const embedUrl = useMemo(() => (current?.type === "youtube" ? current.embedUrl : null), [current]);
-
-  useEffect(() => { setIdx(0); }, [media.length]);
-
-  // Auto-advance for YouTube based on durationSec; for local video use 'ended'.
-  useEffect(() => {
-    if (!current) return;
-    if (ytTimerRef.current) { window.clearTimeout(ytTimerRef.current); ytTimerRef.current = null; }
-
-    if (current.type === "youtube") {
-      const ms = (current.durationSec ?? 30) * 1000;
-      ytTimerRef.current = window.setTimeout(() => {
-        setIdx((i) => (i + 1) % Math.max(media.length, 1));
-      }, ms);
-    }
-    return () => { if (ytTimerRef.current) window.clearTimeout(ytTimerRef.current); };
-  }, [current, media.length]);
-
-  if (!current) {
-    return (
-      <div className="h-full w-full flex items-center justify-center text-tv-muted">
-        <div className="text-center">
-          <p className="text-sm uppercase tracking-[0.25em]">Tidak ada media aktif</p>
-          <p className="text-xs mt-2">Tambahkan media di menu Master Media.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (current.type === "youtube" && embedUrl) {
-    return (
-      <iframe
-        key={current.id + idx}
-        className="h-full w-full"
-        src={embedUrl}
-        allow="autoplay; encrypted-media; picture-in-picture"
-        allowFullScreen
-        title={current.label}
-      />
-    );
-  }
-
+function HeroFallback() {
   return (
-    <video
-      key={current.id + idx}
-      ref={videoRef}
-      src={current.url}
-      autoPlay
-      muted
-      playsInline
-      onEnded={() => setIdx((i) => (i + 1) % Math.max(media.length, 1))}
-      className="h-full w-full object-cover"
-    />
+    <div className="tv-monolith-hero-image tv-monolith-hero-fallback">
+      <img src={goldHeroImage} alt="Kotak perhiasan emas" className="tv-monolith-hero-photo" />
+    </div>
   );
 }
 
-function formatIDR(n: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
+function GoldOrbit({ className = "" }: { className?: string }) {
+  return (
+    <div className={`tv-gold-frame ${className}`.trim()} aria-hidden="true">
+      <div className="tv-gold-frame-top">
+        <span>GOLD</span><span>GOLD</span><span>GOLD</span><span>GOLD</span>
+      </div>
+      <div className="tv-gold-frame-right">
+        <span>GOLD</span><span>GOLD</span><span>GOLD</span><span>GOLD</span>
+      </div>
+      <div className="tv-gold-frame-bottom">
+        <span>GOLD</span><span>GOLD</span><span>GOLD</span><span>GOLD</span>
+      </div>
+      <div className="tv-gold-frame-left">
+        <span>GOLD</span><span>GOLD</span><span>GOLD</span><span>GOLD</span>
+      </div>
+    </div>
+  );
 }
 
-function slicePage(items: Item[], page: number, pageSize: number) {
-  const start = page * pageSize;
-  return items.slice(start, start + pageSize);
+function normalizeCategories(categories: Category[]): PriceGroup[] {
+  return categories
+    .filter((item) => item.isActive !== false && item.code?.trim())
+    .map((item) => ({
+      id: item.id,
+      kode_group: item.code.trim(),
+      nama_group: item.name?.trim() || "-",
+      harga: Number.isFinite(Number(item.price)) ? Number(item.price) : 0,
+      harga_buyback: Number.isFinite(Number(item.buybackPrice)) ? Number(item.buybackPrice) : 0,
+    }))
+    .sort((left, right) => {
+      const codeCompare = left.kode_group.localeCompare(right.kode_group, "id", {
+        sensitivity: "base",
+        numeric: true,
+      });
+
+      if (codeCompare !== 0) {
+        return codeCompare;
+      }
+
+      return left.nama_group.localeCompare(right.nama_group, "id", {
+        sensitivity: "base",
+        numeric: true,
+      });
+    });
+}
+
+function buildYoutubeEmbedUrl(activeMedia: Media | null, allMedia: Media[]) {
+  if (!activeMedia || activeMedia.type !== "youtube") {
+    return "";
+  }
+
+  const activeId = getYoutubeId(activeMedia.embedUrl || activeMedia.sourceUrl || activeMedia.url || "");
+  if (!activeId) {
+    return activeMedia.embedUrl || "";
+  }
+
+  const playlist = allMedia
+    .filter((item) => item.type === "youtube")
+    .map((item) => getYoutubeId(item.embedUrl || item.sourceUrl || item.url || ""))
+    .filter(Boolean)
+    .join(",");
+
+  return `https://www.youtube.com/embed/${activeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${playlist || activeId}&rel=0&modestbranding=1&playsinline=1`;
+}
+
+function getYoutubeId(url: string) {
+  const patterns = [
+    /youtu\.be\/([^?&/]+)/,
+    /youtube\.com\/watch\?v=([^?&/]+)/,
+    /youtube\.com\/embed\/([^?&/]+)/,
+    /youtube\.com\/shorts\/([^?&/]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  return "";
+}
+
+function getHeadlineScale(value: string) {
+  if (value.length >= 26) return 0.58;
+  if (value.length >= 22) return 0.68;
+  if (value.length >= 18) return 0.8;
+  return 1;
+}
+
+function formatPrice(value?: number | null) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return "-";
+  }
+
+  return numericValue.toLocaleString("id-ID");
+}
+
+function formatCurrency(value?: number | null) {
+  if (!Number.isFinite(Number(value))) {
+    return "Rp -";
+  }
+
+  return `Rp ${formatPrice(value)}`;
+}
+
+function formatDateTime(value: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(value);
+}
+
+function formatClock(value: Date | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(value);
+}
+
+function shortenName(value: string, maxLength = 22) {
+  if (!value) {
+    return "-";
+  }
+
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength).trim()}...`;
 }

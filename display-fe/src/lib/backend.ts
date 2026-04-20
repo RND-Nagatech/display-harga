@@ -11,13 +11,12 @@ export type AuthUser = {
   isActive: boolean;
 };
 
-export type Item = {
+export type Category = {
   id: string;
   code: string;
   name: string;
-  category: string;
   price: number;
-  unit: string;
+  buybackPrice: number;
   isActive: boolean;
 };
 
@@ -50,26 +49,26 @@ export async function getMe() {
   return apiJson<ApiResponse<AuthUser>>("/auth/me").then((r) => r.data);
 }
 
-export async function listItems() {
-  return apiJson<ApiResponse<Item[]>>("/items").then((r) => r.data);
+export async function listCategories() {
+  return apiJson<ApiResponse<Category[]>>("/categories").then((r) => r.data);
 }
 
-export async function createItem(payload: Partial<Item>) {
-  return apiJson<ApiResponse<Item>>("/items", {
+export async function createCategory(payload: Partial<Category>) {
+  return apiJson<ApiResponse<Category>>("/categories", {
     method: "POST",
     body: JSON.stringify(payload),
   }).then((r) => r.data);
 }
 
-export async function updateItem(id: string, payload: Partial<Item>) {
-  return apiJson<ApiResponse<Item>>(`/items/${id}`, {
+export async function updateCategory(id: string, payload: Partial<Category>) {
+  return apiJson<ApiResponse<Category>>(`/categories/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   }).then((r) => r.data);
 }
 
-export async function deleteItem(id: string) {
-  await apiJson<ApiResponse<null>>(`/items/${id}`, { method: "DELETE" });
+export async function deleteCategory(id: string) {
+  await apiJson<ApiResponse<null>>(`/categories/${id}`, { method: "DELETE" });
 }
 
 export async function listMedia() {
@@ -137,6 +136,5 @@ export async function updateSystem(payload: SystemSetting) {
 }
 
 export async function getDisplay() {
-  return apiJson<ApiResponse<{ items: Item[]; media: Media[]; system: SystemSetting }>>("/display").then((r) => r.data);
+  return apiJson<ApiResponse<{ categories: Category[]; media: Media[]; system: SystemSetting }>>("/display").then((r) => r.data);
 }
-

@@ -75,12 +75,12 @@ export default function Login() {
             Tampilkan harga & promosi Anda dengan cara <span className="tv-price-text">modern</span>.
           </h1>
           <p className="mt-4 text-sm text-tv-muted leading-relaxed">
-            Kelola item, media video, dan tayangkan langsung ke layar TV toko Anda. Cepat, rapi, dan terlihat profesional.
+            Kelola kategori harga emas, media video, dan tayangkan langsung ke layar TV toko Anda. Cepat, rapi, dan terlihat profesional.
           </p>
 
           <div className="mt-8 grid grid-cols-3 gap-4">
             {[
-              { v: "10+", l: "Item siap tayang" },
+              { v: "10+", l: "Kategori siap tayang" },
               { v: "Live", l: "Update real-time" },
               { v: "4K", l: "Siap untuk TV" },
             ].map((s) => (
@@ -119,7 +119,7 @@ export default function Login() {
               Selamat datang <span className="text-gradient-primary">kembali</span>
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Masuk untuk mengelola item dan tayangan TV Anda.
+              Masuk untuk mengelola kategori, media, dan tayangan TV Anda.
             </p>
           </div>
 

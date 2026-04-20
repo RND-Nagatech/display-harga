@@ -19,7 +19,7 @@ dotenv.config({ path: path.resolve(__dirname, ".env"), override: true });
 const UPLOADS_DIR = path.join(__dirname, "uploads");
 const PORT = Number(process.env.PORT || 7118);
 const JWT_SECRET = process.env.JWT_SECRET || "display-harga-dev-secret";
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/db_display";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/db_display_nagagold";
 const MONGODB_DB = getDbNameFromMongoUri(MONGODB_URI);
 
 await fs.mkdir(UPLOADS_DIR, { recursive: true });
@@ -32,10 +32,11 @@ console.log(`MongoDB connected: ${redactMongoUri(MONGODB_URI)} (db=${MONGODB_DB}
 
 const tmUser = db.collection("tm_user");
 const tpSystem = db.collection("tp_system");
-const tmItem = db.collection("tm_item");
+const tmKategori = db.collection("tm_kategori");
 const tmMedia = db.collection("tm_media");
 
 await tmUser.createIndex({ username: 1 }, { unique: true });
+await tmKategori.createIndex({ code: 1 }, { unique: true });
 
 await tpSystem.updateOne(
   { _id: "singleton" },
@@ -115,68 +116,73 @@ app.get("/api/auth/me", requireAuth, async (req, res) => {
   return res.json({ data: sanitizeUser(user) });
 });
 
-// ---- Items (tm_item)
-app.get("/api/items", requireAuth, async (_req, res) => {
-  const items = await tmItem.find({}).sort({ code: 1 }).toArray();
-  res.json({ data: items.map(sanitizeItem) });
+// ---- Kategori (tm_kategori)
+app.get("/api/categories", requireAuth, async (_req, res) => {
+  const categories = await tmKategori.find({}).sort({ code: 1 }).toArray();
+  res.json({ data: categories.map(sanitizeKategori) });
 });
 
-app.post("/api/items", requireAuth, async (req, res) => {
+app.post("/api/categories", requireAuth, async (req, res) => {
   const code = String(req.body.code || "").trim();
   const name = String(req.body.name || "").trim();
-  const category = String(req.body.category || "").trim();
   const price = Number(req.body.price || 0);
-  const unit = String(req.body.unit || "").trim() || "pcs";
+  const buybackPrice = Number(req.body.buybackPrice ?? req.body.hargaBuyback ?? 0);
   const isActive = req.body.isActive !== false;
 
   if (!code || !name) {
-    return res.status(400).json({ message: "Kode dan nama wajib diisi" });
+    return res.status(400).json({ message: "Kode kategori dan nama kategori wajib diisi" });
   }
 
   const now = new Date().toISOString();
   const doc = {
     code,
     name,
-    category,
     price,
-    unit,
+    buybackPrice,
     isActive,
     createdAt: now,
     updatedAt: now
   };
-  await tmItem.insertOne(doc);
-  return res.status(201).json({ data: sanitizeItem(doc) });
+  try {
+    await tmKategori.insertOne(doc);
+  } catch (_error) {
+    return res.status(409).json({ message: "Kode kategori sudah digunakan" });
+  }
+  return res.status(201).json({ data: sanitizeKategori(doc) });
 });
 
-app.put("/api/items/:id", requireAuth, async (req, res) => {
+app.put("/api/categories/:id", requireAuth, async (req, res) => {
   const id = String(req.params.id || "");
   const code = String(req.body.code || "").trim();
   const name = String(req.body.name || "").trim();
-  const category = String(req.body.category || "").trim();
   const price = Number(req.body.price || 0);
-  const unit = String(req.body.unit || "").trim() || "pcs";
+  const buybackPrice = Number(req.body.buybackPrice ?? req.body.hargaBuyback ?? 0);
   const isActive = req.body.isActive !== false;
 
   if (!code || !name) {
-    return res.status(400).json({ message: "Kode dan nama wajib diisi" });
+    return res.status(400).json({ message: "Kode kategori dan nama kategori wajib diisi" });
   }
 
   const now = new Date().toISOString();
-  const result = await tmItem.findOneAndUpdate(
-    getIdFilter(id),
-    { $set: { code, name, category, price, unit, isActive, updatedAt: now } },
-    { returnDocument: "after" }
-  );
-  const updated = result?.value ?? result;
-  if (!updated) {
-    return res.status(404).json({ message: "Item tidak ditemukan" });
+  try {
+    const result = await tmKategori.findOneAndUpdate(
+      getIdFilter(id),
+      { $set: { code, name, price, buybackPrice, isActive, updatedAt: now } },
+      { returnDocument: "after" }
+    );
+    const updated = result?.value ?? result;
+    if (!updated) {
+      return res.status(404).json({ message: "Kategori tidak ditemukan" });
+    }
+    return res.json({ data: sanitizeKategori(updated) });
+  } catch (_error) {
+    return res.status(409).json({ message: "Kode kategori sudah digunakan" });
   }
-  return res.json({ data: sanitizeItem(updated) });
 });
 
-app.delete("/api/items/:id", requireAuth, async (req, res) => {
+app.delete("/api/categories/:id", requireAuth, async (req, res) => {
   const id = String(req.params.id || "");
-  await tmItem.deleteOne(getIdFilter(id));
+  await tmKategori.deleteOne(getIdFilter(id));
   res.status(204).end();
 });
 
@@ -369,8 +375,8 @@ app.delete("/api/users/:id", requireAuth, requireAdmin, async (req, res) => {
 
 // ---- Player display (public)
 app.get("/api/display", async (_req, res) => {
-  const [items, media, system] = await Promise.all([
-    tmItem
+  const [categories, media, system] = await Promise.all([
+    tmKategori
       .find({ isActive: { $ne: false } })
       .sort({ code: 1 })
       .toArray(),
@@ -380,7 +386,7 @@ app.get("/api/display", async (_req, res) => {
 
   res.json({
     data: {
-      items: items.map(sanitizeItem),
+      categories: categories.map(sanitizeKategori),
       media: media.map(sanitizeMedia),
       system: sanitizeSystem(system)
     }
@@ -414,14 +420,13 @@ function sanitizeSystem(system) {
   };
 }
 
-function sanitizeItem(item) {
+function sanitizeKategori(item) {
   return {
     id: String(item._id),
     code: item.code,
     name: item.name,
-    category: item.category || "",
     price: Number(item.price || 0),
-    unit: item.unit || "pcs",
+    buybackPrice: Number(item.buybackPrice ?? item.hargaBuyback ?? 0),
     isActive: item.isActive !== false
   };
 }
@@ -496,10 +501,10 @@ async function ensureDefaultAdmin() {
 function getDbNameFromMongoUri(uri) {
   const withoutScheme = uri.replace(/^mongodb\+srv:\/\//, "").replace(/^mongodb:\/\//, "");
   const pathStart = withoutScheme.indexOf("/");
-  if (pathStart === -1) return "db_display";
+  if (pathStart === -1) return "db_display_nagagold";
   const pathAndQuery = withoutScheme.slice(pathStart + 1);
   const dbName = pathAndQuery.split("?")[0];
-  return dbName || "db_display";
+  return dbName || "db_display_nagagold";
 }
 
 function redactMongoUri(uri) {

@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/Dashboard";
-import Items from "./pages/Items";
+import Categories from "./pages/Categories";
 import MediaPage from "./pages/Media";
 import Users from "./pages/Users";
 import SettingsPage from "./pages/SettingsPage";
@@ -35,7 +35,7 @@ const App = () => (
               }
             >
               <Route path="/" element={<Dashboard />} />
-              <Route path="/items" element={<Items />} />
+              <Route path="/categories" element={<Categories />} />
               <Route path="/media" element={<MediaPage />} />
               <Route path="/users" element={<Users />} />
               <Route path="/settings" element={<SettingsPage />} />

@@ -2,12 +2,14 @@
 # display-harga
 
 
-Project ini adalah sistem display harga digital yang dapat digunakan untuk berbagai jenis bisnis retail, toko, restoran, atau usaha lain yang membutuhkan tampilan harga dan media promosi secara dinamis.
+Project ini adalah sistem display harga emas digital yang berdiri sendiri untuk kebutuhan layar TV toko emas.
 
 Fitur utama:
-- Manajemen kategori harga
+- Manajemen kategori harga emas
 - Manajemen media display (video/gambar/link)
 - Layar display harga dengan rotasi media otomatis
+- Manage user
+- Pengaturan sistem perusahaan
 
 ## Struktur
 
@@ -16,7 +18,7 @@ Fitur utama:
 
 ## Catatan scope
 
-Repo ini adalah MVP untuk kebutuhan dasar: mengelola daftar harga (item) + media, lalu menampilkannya di layar TV. Dokumen `display-harga.md` berisi referensi desain/roadmap fitur yang lebih lengkap (multi-bisnis, multi-device, scheduling, dsb).
+Repo ini tidak connect ke script/backend Nagagold. Semua data yang tampil di Display TV diambil dari master project ini sendiri.
 
 ## Menjalankan project
 
@@ -94,12 +96,12 @@ Data disimpan di MongoDB collections:
 
 - `tm_user` (user login, password hash)
 - `tp_system` (setting perusahaan)
-- `tm_item` (master item)
+- `tm_kategori` (kode kategori, nama kategori, harga, harga buyback)
 - `tm_media` (master media)
 
 ## Fitur
 
-- Master item/daftar harga dengan CRUD sederhana
+- Master kategori harga emas dengan CRUD sederhana
 - Master media display untuk upload video lokal, gambar, atau link YouTube
 - Layar display harga dengan rotasi media otomatis
 - Fallback hero default saat media belum tersedia
