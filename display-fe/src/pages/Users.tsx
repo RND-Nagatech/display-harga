@@ -141,10 +141,12 @@ export default function Users() {
                     : <Badge variant="secondary">Nonaktif</Badge>}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="icon" variant="ghost" onClick={()=>onEdit(u)}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" onClick={()=>setConfirm({ ...empty, id: u.id, username: u.username, level: u.level, isActive: u.isActive, password: "" })}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <div className="flex justify-end items-center gap-1 flex-nowrap">
+                    <Button size="icon" variant="ghost" onClick={()=>onEdit(u)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={()=>setConfirm({ ...empty, id: u.id, username: u.username, level: u.level, isActive: u.isActive, password: "" })}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -76,11 +76,11 @@ export default function AdminLayout() {
         </nav>
 
         <div className="m-3 rounded-xl border border-sidebar-border bg-card p-4 space-y-3">
-          <div>
+          {/* <div>
             <p className="text-xs font-medium text-muted-foreground">Perusahaan</p>
             <p className="mt-1 text-sm font-semibold text-foreground line-clamp-1">{settings?.companyName || "-"}</p>
             <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{settings?.address || "-"}</p>
-          </div>
+          </div> */}
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <span className="text-xs text-muted-foreground">Tema</span>
             <ThemeToggle />
