@@ -1,116 +1,192 @@
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 12s linear infinite; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 400ms ease-out both; }
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Design System — Dual theme with rich palette
+   Light: warm off-white + indigo→violet accent
+   Dark:  deep slate-blue + teal→cyan accent
+   Display TV: stays cinematic dark regardless of theme.
+   All colors HSL.
+*/
+
 @layer base {
   :root {
-    --radius: 0.75rem;
-
-    --background: 0 0% 100%;
-    --foreground: 224 26% 12%;
+    /* === LIGHT === */
+    --background: 30 25% 98%;        /* warm off-white */
+    --foreground: 240 25% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 26% 12%;
+    --card-foreground: 240 25% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 26% 12%;
+    --popover-foreground: 240 25% 12%;
 
-    --primary: 224 26% 12%;
+    --primary: 245 58% 51%;          /* indigo */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 18% 96%;
-    --secondary-foreground: 224 26% 12%;
+    --secondary: 250 30% 96%;
+    --secondary-foreground: 245 30% 22%;
 
-    --muted: 220 18% 96%;
-    --muted-foreground: 224 10% 45%;
+    --muted: 250 25% 95%;
+    --muted-foreground: 240 10% 45%;
 
-    --accent: 40 92% 52%;
-    --accent-foreground: 224 26% 12%;
+    --accent: 262 83% 62%;           /* violet */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 75% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 90%;
-    --input: 220 14% 90%;
-    --ring: 40 92% 52%;
+    --success: 158 64% 42%;
+    --success-foreground: 0 0% 100%;
 
-    --sidebar: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-border: 223 30% 18%;
-    --sidebar-accent: 223 30% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
+    --warning: 35 92% 55%;
+    --warning-foreground: 30 25% 12%;
 
-    /* TV palette (kept dark even on light theme for cinematic sections) */
+    --border: 245 25% 90%;
+    --input: 245 25% 90%;
+    --ring: 262 83% 62%;
+
+    --radius: 0.85rem;
+
+    --sidebar-background: 250 40% 98%;
+    --sidebar-foreground: 245 20% 30%;
+    --sidebar-primary: 262 83% 62%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 250 35% 95%;
+    --sidebar-accent-foreground: 245 30% 18%;
+    --sidebar-border: 245 30% 92%;
+    --sidebar-ring: 262 83% 62%;
+
+    /* Display TV (always dark cinematic) */
     --tv-bg: 230 45% 6%;
-    --tv-surface: 230 40% 10%;
-    --tv-border: 230 30% 18%;
+    --tv-surface: 230 38% 11%;
+    --tv-surface-elevated: 230 32% 15%;
+    --tv-border: 230 28% 20%;
     --tv-text: 210 40% 98%;
-    --tv-muted: 215 20% 70%;
-    --tv-accent: 40 92% 52%;
+    --tv-muted: 220 15% 70%;
+    --tv-accent: 162 78% 55%;        /* teal-emerald price */
+    --tv-accent-2: 38 100% 62%;
+
+    /* Gradients & shadows */
+    --gradient-primary: linear-gradient(135deg, hsl(245 58% 51%), hsl(262 83% 62%));
+    --gradient-warm: linear-gradient(135deg, hsl(330 80% 65%), hsl(262 83% 62%));
+    --gradient-cool: linear-gradient(135deg, hsl(192 85% 55%), hsl(245 70% 60%));
+    --gradient-tv: radial-gradient(ellipse at top, hsl(230 45% 12%) 0%, hsl(230 45% 4%) 70%);
+    --gradient-tv-card: linear-gradient(180deg, hsl(230 38% 13% / 0.92), hsl(230 38% 8% / 0.96));
+    --gradient-price: linear-gradient(135deg, hsl(162 78% 55%), hsl(192 85% 55%));
+
+    --shadow-soft: 0 1px 2px 0 hsl(245 30% 20% / 0.04), 0 1px 3px 0 hsl(245 30% 20% / 0.06);
+    --shadow-md: 0 4px 14px -2px hsl(245 40% 25% / 0.08), 0 2px 6px -2px hsl(245 40% 25% / 0.05);
+    --shadow-lg: 0 24px 48px -16px hsl(245 50% 25% / 0.18);
+    --shadow-glow: 0 0 0 1px hsl(262 83% 62% / 0.1), 0 8px 32px -8px hsl(262 83% 62% / 0.25);
+    --shadow-tv-glow: 0 0 80px hsl(162 78% 55% / 0.18);
+
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 230 20% 9%;
-    --foreground: 210 40% 98%;
+    /* === DARK === */
+    --background: 230 30% 7%;
+    --foreground: 220 25% 96%;
 
-    --card: 230 20% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 230 28% 11%;
+    --card-foreground: 220 25% 96%;
 
-    --popover: 230 20% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 230 28% 11%;
+    --popover-foreground: 220 25% 96%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 230 20% 9%;
+    --primary: 192 85% 55%;          /* cyan */
+    --primary-foreground: 230 40% 8%;
 
-    --secondary: 230 16% 16%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 230 22% 16%;
+    --secondary-foreground: 220 20% 92%;
 
-    --muted: 230 16% 16%;
-    --muted-foreground: 215 18% 70%;
+    --muted: 230 20% 15%;
+    --muted-foreground: 220 12% 65%;
 
-    --accent: 40 92% 52%;
-    --accent-foreground: 230 20% 9%;
+    --accent: 162 78% 55%;           /* teal */
+    --accent-foreground: 230 40% 8%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 230 16% 18%;
-    --input: 230 16% 18%;
-    --ring: 40 92% 52%;
+    --success: 158 64% 50%;
+    --success-foreground: 230 40% 8%;
 
-    --sidebar: 230 20% 10%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-border: 230 16% 18%;
-    --sidebar-accent: 230 16% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-  }
+    --warning: 35 92% 60%;
+    --warning-foreground: 230 40% 8%;
 
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground antialiased;
+    --border: 230 22% 18%;
+    --input: 230 22% 18%;
+    --ring: 192 85% 55%;
+
+    --sidebar-background: 230 32% 9%;
+    --sidebar-foreground: 220 18% 75%;
+    --sidebar-primary: 162 78% 55%;
+    --sidebar-primary-foreground: 230 40% 8%;
+    --sidebar-accent: 230 22% 14%;
+    --sidebar-accent-foreground: 220 25% 96%;
+    --sidebar-border: 230 22% 16%;
+    --sidebar-ring: 192 85% 55%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(192 85% 55%), hsl(162 78% 55%));
+    --gradient-warm: linear-gradient(135deg, hsl(330 80% 65%), hsl(280 80% 65%));
+    --gradient-cool: linear-gradient(135deg, hsl(192 85% 55%), hsl(245 70% 60%));
+
+    --shadow-soft: 0 1px 2px 0 hsl(0 0% 0% / 0.3), 0 1px 3px 0 hsl(0 0% 0% / 0.4);
+    --shadow-md: 0 4px 14px -2px hsl(0 0% 0% / 0.4), 0 2px 6px -2px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 24px 48px -16px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 0 1px hsl(162 78% 55% / 0.15), 0 8px 32px -8px hsl(162 78% 55% / 0.35);
   }
 }
 
-@layer utilities {
-  .bg-gradient-primary {
-    @apply bg-[image:var(--tw-gradient-stops)];
-    background-image: linear-gradient(135deg, hsl(var(--accent)), hsl(192 85% 55%));
+@layer base {
+  * { @apply border-border; }
+  html, body, #root { @apply h-full; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
   }
+}
+
+@layer components {
+  /* Display TV always dark */
+  .tv-theme {
+    background: var(--gradient-tv);
+    color: hsl(var(--tv-text));
+  }
+  .tv-surface {
+    background: var(--gradient-tv-card);
+    border: 1px solid hsl(var(--tv-border));
+  }
+  .tv-price-text {
+    background: var(--gradient-price);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .tv-glow { box-shadow: var(--shadow-tv-glow); }
 
   .text-gradient-primary {
-    background-image: linear-gradient(135deg, hsl(var(--accent)), hsl(192 85% 55%));
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-
-  .tv-price-text {
-    background-image: linear-gradient(135deg, hsl(var(--tv-accent)), hsl(192 85% 55%));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-gradient-warm { background-image: var(--gradient-warm); }
+  .bg-gradient-cool { background-image: var(--gradient-cool); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
 }
 
