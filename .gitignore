@@ -9,4 +9,7 @@ server/uploads/*
 .env.local
 .env.*
 !.env.example
+*.tsbuildinfo
+display-fe/vite.config.js
+display-fe/vite.config.d.ts
 server/data/*.json

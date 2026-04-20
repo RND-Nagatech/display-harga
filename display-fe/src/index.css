@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    --background: 0 0% 100%;
+    --foreground: 224 26% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 26% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 26% 12%;
+
+    --primary: 224 26% 12%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 18% 96%;
+    --secondary-foreground: 224 26% 12%;
+
+    --muted: 220 18% 96%;
+    --muted-foreground: 224 10% 45%;
+
+    --accent: 40 92% 52%;
+    --accent-foreground: 224 26% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 40 92% 52%;
+
+    --sidebar: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 223 30% 18%;
+    --sidebar-accent: 223 30% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+
+    /* TV palette (kept dark even on light theme for cinematic sections) */
+    --tv-bg: 230 45% 6%;
+    --tv-surface: 230 40% 10%;
+    --tv-border: 230 30% 18%;
+    --tv-text: 210 40% 98%;
+    --tv-muted: 215 20% 70%;
+    --tv-accent: 40 92% 52%;
+  }
+
+  .dark {
+    --background: 230 20% 9%;
+    --foreground: 210 40% 98%;
+
+    --card: 230 20% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 230 20% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 230 20% 9%;
+
+    --secondary: 230 16% 16%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 230 16% 16%;
+    --muted-foreground: 215 18% 70%;
+
+    --accent: 40 92% 52%;
+    --accent-foreground: 230 20% 9%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 230 16% 18%;
+    --input: 230 16% 18%;
+    --ring: 40 92% 52%;
+
+    --sidebar: 230 20% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 230 16% 18%;
+    --sidebar-accent: 230 16% 16%;
+    --sidebar-accent-foreground: 210 40% 98%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-primary {
+    @apply bg-[image:var(--tw-gradient-stops)];
+    background-image: linear-gradient(135deg, hsl(var(--accent)), hsl(192 85% 55%));
+  }
+
+  .text-gradient-primary {
+    background-image: linear-gradient(135deg, hsl(var(--accent)), hsl(192 85% 55%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .tv-price-text {
+    background-image: linear-gradient(135deg, hsl(var(--tv-accent)), hsl(192 85% 55%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
