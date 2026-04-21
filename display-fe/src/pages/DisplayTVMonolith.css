@@ -1,6 +1,10 @@
 body.tv-monolith-active {
   margin: 0;
   overflow: hidden;
+  background: #f7f3ea !important;
+}
+
+.dark body.tv-monolith-active {
   background: #111111 !important;
 }
 
@@ -43,6 +47,87 @@ body.tv-monolith-active .page-without-sidebar .content {
 
 .tv-monolith-screen * {
   box-sizing: border-box;
+}
+
+html:not(.dark) .tv-monolith-screen {
+  --tv-bg: #f7f3ea;
+  --tv-surface-low: #fff8eb;
+  --tv-surface: #fffaf0;
+  --tv-surface-high: #ffffff;
+  --tv-gold: #c69222;
+  --tv-gold-deep: #8f6312;
+  --tv-text: #1f1c18;
+  --tv-text-soft: #62584a;
+  --tv-success: #15904d;
+  --tv-danger: #c2412d;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(198, 146, 34, 0.2), transparent 20%),
+    radial-gradient(circle at 84% 82%, rgba(143, 99, 18, 0.14), transparent 24%),
+    linear-gradient(180deg, #fffaf0 0%, #f4ead9 100%);
+}
+
+html:not(.dark) .tv-monolith-table,
+html:not(.dark) .tv-monolith-hero,
+html:not(.dark) .tv-monolith-info-card,
+html:not(.dark) .tv-monolith-footer {
+  background: rgba(255, 250, 240, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(109, 79, 20, 0.08),
+    0 18px 44px rgba(109, 79, 20, 0.14);
+}
+
+html:not(.dark) .tv-monolith-table-head {
+  background: rgba(109, 79, 20, 0.08);
+}
+
+html:not(.dark) .tv-monolith-table-row {
+  background:
+    linear-gradient(135deg, rgba(198, 146, 34, 0.16) 0%, rgba(198, 146, 34, 0.02) 32%),
+    linear-gradient(180deg, #fffdf8 0%, #f8efe0 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(109, 79, 20, 0.08),
+    0 8px 18px rgba(109, 79, 20, 0.08);
+}
+
+html:not(.dark) .tv-monolith-table-row.is-featured {
+  background:
+    linear-gradient(135deg, rgba(198, 146, 34, 0.22) 0%, rgba(198, 146, 34, 0.05) 34%),
+    linear-gradient(180deg, #fff7df 0%, #f2dfb7 100%);
+  box-shadow:
+    inset 4px 0 0 var(--tv-gold),
+    inset 0 0 0 1px rgba(109, 79, 20, 0.12),
+    0 10px 22px rgba(109, 79, 20, 0.12);
+}
+
+html:not(.dark) .tv-monolith-hero {
+  background:
+    radial-gradient(circle at 42% 18%, rgba(198, 146, 34, 0.16), transparent 36%),
+    linear-gradient(180deg, #fffdf7 0%, #efe4d2 100%);
+}
+
+html:not(.dark) .tv-monolith-hero-copy h1 {
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.84) 0%, rgba(255, 250, 240, 0.58) 100%);
+  text-shadow:
+    0 0 1px rgba(255, 250, 240, 0.9),
+    0 8px 20px rgba(109, 79, 20, 0.16);
+  -webkit-text-stroke: 1px rgba(109, 79, 20, 0.12);
+}
+
+html:not(.dark) .tv-monolith-hero-copy p,
+html:not(.dark) .tv-monolith-buyback-note {
+  color: var(--tv-text-soft);
+}
+
+html:not(.dark) .tv-monolith-info-card.is-highlight {
+  background: rgba(255, 246, 222, 0.96);
+}
+
+html:not(.dark) .tv-monolith-ticker-item {
+  background: rgba(109, 79, 20, 0.07);
+}
+
+html:not(.dark) .tv-monolith-copyright {
+  background: rgba(109, 79, 20, 0.08);
 }
 
 .tv-monolith-ambient {

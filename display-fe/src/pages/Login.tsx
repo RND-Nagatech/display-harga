@@ -60,35 +60,31 @@ export default function Login() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
-      {/* Left — branding visual (always cinematic dark, theme-independent) */}
+      {/* Left — branding visual follows light/dark theme */}
       <aside
-        className="relative hidden lg:flex flex-col justify-between p-12 text-tv-text overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(135deg, hsl(230 45% 8% / 0.88), hsl(230 45% 4% / 0.92)), url(${loginBg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+        className="relative hidden lg:flex flex-col justify-between overflow-hidden border-r border-border bg-[radial-gradient(circle_at_18%_12%,hsl(var(--accent)/0.16),transparent_26%),linear-gradient(135deg,hsl(var(--card)),hsl(var(--secondary)))] p-12 text-foreground dark:bg-[linear-gradient(135deg,hsl(230_45%_8%/0.88),hsl(230_45%_4%/0.92))]"
       >
+        <img src={loginBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-multiply dark:opacity-55 dark:mix-blend-normal" />
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-tv-accent/20 text-tv-accent backdrop-blur">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/15 text-accent backdrop-blur dark:bg-tv-accent/20 dark:text-tv-accent">
             <Building2 className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-tv-muted">PriceTV</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground dark:text-tv-muted">PriceTV</p>
             <p className="text-base font-semibold">Display Harga untuk Bisnis</p>
           </div>
         </div>
 
         {/* Glow accents */}
-        <div className="pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-tv-accent/25 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[hsl(192_85%_55%_/_0.18)] blur-3xl" />
-        <div className="pointer-events-none absolute top-1/3 right-1/4 h-64 w-64 rounded-full bg-[hsl(280_80%_60%_/_0.18)] blur-3xl" />
+        <div className="pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-accent/20 blur-3xl dark:bg-tv-accent/25" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-primary/10 blur-3xl dark:bg-[hsl(192_85%_55%_/_0.18)]" />
+        <div className="pointer-events-none absolute top-1/3 right-1/4 h-64 w-64 rounded-full bg-warning/10 blur-3xl dark:bg-[hsl(280_80%_60%_/_0.18)]" />
 
         <div className="relative z-10 max-w-md">
           <h1 className="text-4xl font-semibold leading-tight tracking-tight">
-            Tampilkan harga & promosi Anda dengan cara <span className="tv-price-text">modern</span>.
+            Tampilkan harga & promosi Anda dengan cara <span className="text-gradient-primary">modern</span>.
           </h1>
-          <p className="mt-4 text-sm text-tv-muted leading-relaxed">
+          <p className="mt-4 text-sm text-muted-foreground leading-relaxed dark:text-tv-muted">
             Kelola kategori harga emas, media video, dan tayangkan langsung ke layar TV toko Anda. Cepat, rapi, dan terlihat profesional.
           </p>
 
@@ -98,15 +94,15 @@ export default function Login() {
               { v: "Live", l: "Update real-time" },
               { v: "4K", l: "Siap untuk TV" },
             ].map((s) => (
-              <div key={s.l} className="rounded-xl border border-tv-border bg-tv-surface/40 backdrop-blur px-4 py-3">
-                <p className="text-xl font-bold text-tv-text">{s.v}</p>
-                <p className="text-[10px] uppercase tracking-wider text-tv-muted mt-0.5">{s.l}</p>
+              <div key={s.l} className="rounded-xl border border-border bg-background/50 backdrop-blur px-4 py-3 dark:border-tv-border dark:bg-tv-surface/40">
+                <p className="text-xl font-bold text-foreground dark:text-tv-text">{s.v}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 dark:text-tv-muted">{s.l}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative z-10 text-xs text-tv-muted">
+        <p className="relative z-10 text-xs text-muted-foreground dark:text-tv-muted">
           © 2026 NAGATECH SISTEM INTEGRATOR
         </p>
       </aside>
