@@ -1,3 +1,19 @@
+html:not(.dark) .tv-monolith-hero-copy p {
+  color: #111;
+  font-weight: 800;
+  text-shadow: 0 1px 4px #fff, 0 0 2px #fff;
+  background: linear-gradient(90deg, rgba(242,202,80,0.18) 0%, rgba(255,255,255,0.82) 100%);
+  border-radius: 12px;
+  padding: 4px 18px;
+  display: inline-block;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 8px 0 rgba(198,146,34,0.08);
+}
+html:not(.dark) .tv-monolith-hero-copy p {
+  color: #111;
+  font-weight: 800;
+  text-shadow: 0 1px 4px #fff, 0 0 2px #fff;
+}
 body.tv-monolith-active {
   margin: 0;
   overflow: hidden;
@@ -504,11 +520,13 @@ html:not(.dark) .tv-monolith-copyright {
 .tv-monolith-spot-label {
   position: relative;
   z-index: 1;
-  color: var(--tv-text-soft);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  font-weight: 900;
+    color: #f3f3f3;
+    text-shadow: none;
 }
 
 .tv-monolith-spot-price {
