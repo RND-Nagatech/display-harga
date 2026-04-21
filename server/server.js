@@ -449,6 +449,7 @@ function sanitizeMedia(item) {
 
 function normalizeUserLevel(level) {
   const raw = String(level || "").toLowerCase();
+  if (raw === "owner") return "owner";
   if (raw === "admin") return "admin";
   return "operator";
 }
@@ -469,7 +470,7 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  if (req.auth?.level === "admin") {
+  if (req.auth?.level === "owner" || req.auth?.level === "admin") {
     return next();
   }
   return res.status(403).json({ message: "Forbidden" });

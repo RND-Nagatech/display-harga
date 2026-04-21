@@ -72,8 +72,8 @@ export default function Categories() {
       const payload = {
         code: draft.code,
         name: draft.name,
-        price: Number(draft.price || 0),
-        buybackPrice: Number(draft.buybackPrice || 0),
+        price: parseRupiahInput(draft.price),
+        buybackPrice: parseRupiahInput(draft.buybackPrice),
         isActive: draft.isActive,
       };
       return draft.id ? updateCategory(draft.id, payload) : createCategory(payload);
@@ -103,8 +103,8 @@ export default function Categories() {
       id: i.id,
       code: i.code,
       name: i.name,
-      price: String(i.price ?? ""),
-      buybackPrice: String(i.buybackPrice ?? ""),
+      price: formatRupiahInput(i.price),
+      buybackPrice: formatRupiahInput(i.buybackPrice),
       isActive: i.isActive !== false,
     });
     setOpen(true);
@@ -179,8 +179,24 @@ export default function Categories() {
               <div><Label>Nama Kategori</Label><Input value={draft.name} onChange={(e)=>setDraft({...draft, name:e.target.value})} placeholder="Antam Certi Eye RM" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Harga (IDR)</Label><Input type="number" value={draft.price} onChange={(e)=>setDraft({...draft, price:e.target.value})} /></div>
-              <div><Label>Harga Buyback (IDR)</Label><Input type="number" value={draft.buybackPrice} onChange={(e)=>setDraft({...draft, buybackPrice:e.target.value})} /></div>
+              <div>
+                <Label>Harga (IDR)</Label>
+                <Input
+                  inputMode="numeric"
+                  value={draft.price}
+                  onChange={(e)=>setDraft({...draft, price:formatRupiahInput(e.target.value)})}
+                  placeholder="5.000.000"
+                />
+              </div>
+              <div>
+                <Label>Harga Buyback (IDR)</Label>
+                <Input
+                  inputMode="numeric"
+                  value={draft.buybackPrice}
+                  onChange={(e)=>setDraft({...draft, buybackPrice:formatRupiahInput(e.target.value)})}
+                  placeholder="4.800.000"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={draft.isActive} onCheckedChange={(v)=>setDraft({...draft, isActive:v})} />
@@ -219,4 +235,18 @@ export default function Categories() {
 
 function formatIDR(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
+}
+
+function parseRupiahInput(value: string | number) {
+  const digitsOnly = String(value ?? "").replace(/\D/g, "");
+  return Number(digitsOnly || 0);
+}
+
+function formatRupiahInput(value: string | number) {
+  const numericValue = parseRupiahInput(value);
+  if (!numericValue) {
+    return "";
+  }
+
+  return numericValue.toLocaleString("id-ID");
 }

@@ -247,7 +247,7 @@ export default function DisplayTV() {
 
             <article className="tv-monolith-info-card" id="highlight-buyback-card">
               <div className="tv-monolith-info-icon">●</div>
-              <h3>Highlight Harga Buyback</h3>
+              <h3>Buyback</h3>
               <p>
                 {highlightedGroup?.kode_group || "Belum ada"}{" "}
                 {highlightedGroup ? `- ${formatCurrency(highlightedGroup.harga_buyback)}` : ""}
@@ -295,7 +295,7 @@ function PriceTable({ title, rows, pageKey }: { title: string; rows: PriceGroup[
       <div className="tv-monolith-table-head">
         <span>Kategori</span>
         <span>Harga</span>
-        <span>Harga Buyback</span>
+        <span>Buyback</span>
       </div>
 
       <div className="tv-monolith-table-list" key={`${title}-${pageKey}`}>

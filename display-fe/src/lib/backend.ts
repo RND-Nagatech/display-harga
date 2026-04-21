@@ -2,7 +2,7 @@ import { apiForm, apiJson } from "./api";
 
 export type ApiResponse<T> = { data: T };
 
-export type UserLevel = "admin" | "operator";
+export type UserLevel = "owner" | "admin" | "operator";
 
 export type AuthUser = {
   id: string;

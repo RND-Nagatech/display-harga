@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -7,6 +8,9 @@ import {
   Users,
   Settings as SettingsIcon,
   Building2,
+  CalendarDays,
+  ChevronDown,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,7 +18,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { getSystem } from "@/lib/backend";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -28,23 +31,30 @@ const nav = [
 export default function AdminLayout() {
   const loc = useLocation();
   const { user, isAdmin, logout } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { data: settings } = useQuery({
     queryKey: ["system"],
     queryFn: getSystem,
     staleTime: 30_000,
   });
+  const systemDate = new Intl.DateTimeFormat("id-ID", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const userInitial = (user?.username || "?").slice(0, 1).toUpperCase();
 
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
+        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground shadow-glow">
             <Building2 className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-sidebar-foreground truncate">PriceTV</p>
-            <p className="text-xs text-muted-foreground truncate">{settings?.companyCode || ""}</p>
+            <p className="text-sm font-semibold text-sidebar-foreground truncate">Display Harga Emas</p>
+            <p className="text-xs text-muted-foreground truncate">{settings?.companyName || ""}</p>
           </div>
         </div>
 
@@ -75,34 +85,58 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        <div className="m-3 rounded-xl border border-sidebar-border bg-card p-4 space-y-3">
-          {/* <div>
-            <p className="text-xs font-medium text-muted-foreground">Perusahaan</p>
-            <p className="mt-1 text-sm font-semibold text-foreground line-clamp-1">{settings?.companyName || "-"}</p>
-            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{settings?.address || "-"}</p>
-          </div> */}
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-xs text-muted-foreground">Tema</span>
-            <ThemeToggle />
-          </div>
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-xs text-muted-foreground">Login</span>
-            <span className="text-xs font-semibold text-foreground">{user?.username}</span>
-          </div>
-          <Button variant="outline" size="sm" className="w-full" onClick={logout}>
-            <LogOut className="mr-2 h-4 w-4" /> Logout
-          </Button>
-        </div>
       </aside>
 
       {/* Main */}
       <main className="flex-1 min-w-0">
+        <header className="relative z-40 hidden h-16 items-center justify-end border-b border-border bg-card/95 px-6 backdrop-blur lg:flex">
+          <div className="flex items-center gap-4">
+            <div className="flex h-9 items-center gap-2 rounded-full bg-secondary px-4 text-sm text-foreground">
+              <span>Tanggal System : {systemDate}</span>
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <ThemeToggle />
+            <div className="relative">
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-full border border-border bg-background px-2 py-1 transition-colors hover:bg-secondary/70"
+                onClick={() => setUserMenuOpen((current) => !current)}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-sm">
+                  {userInitial}
+                </div>
+                <div className="min-w-0 pr-1 text-left">
+                  <p className="max-w-32 truncate text-xs font-semibold text-foreground">{user?.username}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{user?.level}</p>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              {userMenuOpen ? (
+                <div className="absolute right-0 top-full z-[200] mt-2 w-36 overflow-hidden rounded-lg border border-border bg-card p-1 shadow-xl">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      logout();
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </header>
+
         <div className="lg:hidden flex items-center justify-between border-b border-border bg-card px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary text-primary-foreground">
               <Building2 className="h-4 w-4" />
             </div>
-            <span className="font-semibold">PriceTV</span>
+            <span className="font-semibold">Display Harga Emas</span>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -131,7 +165,7 @@ export default function AdminLayout() {
           })}
         </div>
 
-        <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-fade-up">
+        <div className="px-6 py-5 lg:px-10 lg:py-4 max-w-[1400px] mx-auto animate-fade-up">
           <Outlet />
         </div>
       </main>

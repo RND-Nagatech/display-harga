@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       login,
       logout,
-      isAdmin: user?.level === "admin",
+      isAdmin: user?.level === "owner" || user?.level === "admin",
     }),
     [loading, user]
   );
@@ -80,4 +80,3 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
-

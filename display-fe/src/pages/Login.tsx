@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Building2, Eye, EyeOff, Loader2, Lock, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,6 @@ import { getDisplay } from "@/lib/backend";
 
 export default function Login() {
   const nav = useNavigate();
-  const loc = useLocation();
   const { login, user } = useAuth();
   const { data: display } = useQuery({
     queryKey: ["display"],
@@ -29,14 +28,29 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const remembered = getRememberedLogin();
+    if (!remembered) {
+      return;
+    }
+
+    setUsername(remembered.username);
+    setPassword(remembered.password);
+    setRemember(true);
+  }, []);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return toast.error("Username & password wajib diisi");
     setLoading(true);
     try {
       await login(username, password, remember);
-      const to = (loc.state as any)?.from || "/";
-      nav(to);
+      if (remember) {
+        setRememberedLogin(username, password);
+      } else {
+        clearRememberedLogin();
+      }
+      nav("/", { replace: true });
     } finally {
       setLoading(false);
     }
@@ -93,7 +107,7 @@ export default function Login() {
         </div>
 
         <p className="relative z-10 text-xs text-tv-muted">
-          © {new Date().getFullYear()} {settings?.companyName || "PriceTV"}
+          © 2026 NAGATECH SISTEM INTEGRATOR
         </p>
       </aside>
 
@@ -114,7 +128,6 @@ export default function Login() {
           </div>
 
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">Masuk</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
               Selamat datang <span className="text-gradient-primary">kembali</span>
             </h2>
@@ -149,9 +162,11 @@ export default function Login() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
+                {/*
                 <button type="button" tabIndex={-1} className="text-xs font-medium text-accent hover:underline">
                   Lupa password?
                 </button>
+                */}
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -191,12 +206,14 @@ export default function Login() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Masuk"}
             </Button>
 
+            {/*
             <p className="text-xs text-center text-muted-foreground">
               Belum punya akun?{" "}
               <button type="button" className="font-medium text-accent hover:underline">
                 Hubungi admin
               </button>
             </p>
+            */}
           </form>
 
           <div className="mt-10 pt-6 border-t border-border text-[11px] text-muted-foreground flex items-center justify-between">
@@ -207,4 +224,36 @@ export default function Login() {
       </section>
     </div>
   );
+}
+
+const REMEMBER_LOGIN_KEY = "display-harga:remember-login";
+
+function getRememberedLogin() {
+  try {
+    const raw = window.localStorage.getItem(REMEMBER_LOGIN_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.username !== "string" || typeof parsed?.password !== "string") {
+      return null;
+    }
+    return { username: parsed.username, password: parsed.password };
+  } catch {
+    return null;
+  }
+}
+
+function setRememberedLogin(username: string, password: string) {
+  try {
+    window.localStorage.setItem(REMEMBER_LOGIN_KEY, JSON.stringify({ username, password }));
+  } catch {
+    // ignore
+  }
+}
+
+function clearRememberedLogin() {
+  try {
+    window.localStorage.removeItem(REMEMBER_LOGIN_KEY);
+  } catch {
+    // ignore
+  }
 }

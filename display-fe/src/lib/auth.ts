@@ -3,7 +3,7 @@ const TOKEN_KEY = "pricetv:token";
 export type AuthUser = {
   id: string;
   username: string;
-  level: "admin" | "operator";
+  level: "owner" | "admin" | "operator";
 };
 
 export function getToken(): string | null {
@@ -34,4 +34,3 @@ export function clearToken() {
     // ignore
   }
 }
-

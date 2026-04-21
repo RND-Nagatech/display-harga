@@ -12,10 +12,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, X, Plus, Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createUser, deleteUser, listUsers, updateUser } from "@/lib/backend";
+import type { UserLevel } from "@/lib/backend";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -35,7 +33,7 @@ type UserDraft = {
   id: string;
   username: string;
   password: string;
-  level: "admin" | "operator";
+  level: UserLevel;
   isActive: boolean;
 };
 
@@ -44,6 +42,7 @@ const empty: UserDraft = { id: "", username: "", password: "", level: "operator"
 export default function Users() {
   const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
+  const [rolePickerOpen, setRolePickerOpen] = useState(false);
   const [draft, setDraft] = useState<UserDraft>(empty);
   const [confirm, setConfirm] = useState<UserDraft | null>(null);
   const qc = useQueryClient();
@@ -134,7 +133,7 @@ export default function Users() {
             {users.map((u: any) => (
               <TableRow key={u.id}>
                 <TableCell className="text-muted-foreground font-mono text-xs">{u.username}</TableCell>
-                <TableCell><Badge variant="secondary">{u.level === "admin" ? "Admin" : "Operator"}</Badge></TableCell>
+                <TableCell><Badge variant="secondary">{formatRole(u.level)}</Badge></TableCell>
                 <TableCell>
                   {u.isActive
                     ? <Badge className="bg-success/10 text-success border-0">Aktif</Badge>
@@ -154,7 +153,13 @@ export default function Users() {
         </Table>
       </Card>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) setRolePickerOpen(false);
+        }}
+      >
         <DialogContent>
           <DialogHeader><DialogTitle>{draft.id ? "Edit User" : "Tambah User"}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
@@ -165,13 +170,41 @@ export default function Users() {
             </div>
             <div>
               <Label>Role</Label>
-              <Select value={draft.level} onValueChange={(v)=>setDraft({...draft, level: v as any})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="operator">Operator</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm ring-offset-background transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                  onClick={() => setRolePickerOpen((current) => !current)}
+                >
+                  <span>{formatRole(draft.level)}</span>
+                  <span className="flex items-center gap-3 text-muted-foreground">
+                    <X className="h-4 w-4" onClick={(event) => event.stopPropagation()} />
+                    <span className="h-5 w-px bg-border" />
+                    <ChevronDown className="h-4 w-4" />
+                  </span>
+                </button>
+                {rolePickerOpen ? (
+                  <div className="absolute left-0 right-0 top-full z-[80] mt-2 overflow-hidden rounded-md border border-border bg-card shadow-xl">
+                    {(["admin", "owner", "operator"] as UserLevel[]).map((level) => (
+                      <button
+                        key={level}
+                        type="button"
+                        className={`block w-full px-4 py-3 text-left text-sm uppercase tracking-wide transition-colors ${
+                          draft.level === level
+                            ? "bg-secondary text-foreground"
+                            : "text-foreground hover:bg-secondary/70"
+                        }`}
+                        onClick={() => {
+                          setDraft({ ...draft, level });
+                          setRolePickerOpen(false);
+                        }}
+                      >
+                        {formatRole(level)}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={draft.isActive} onCheckedChange={(v)=>setDraft({...draft, isActive:v})} />
@@ -204,4 +237,10 @@ export default function Users() {
       </AlertDialog>
     </>
   );
+}
+
+function formatRole(level: UserLevel) {
+  if (level === "owner") return "Owner";
+  if (level === "admin") return "Admin";
+  return "Operator";
 }
