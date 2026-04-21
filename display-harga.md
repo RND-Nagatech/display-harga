@@ -756,7 +756,7 @@ Test langsung:
 ```bash
 curl -X POST http://localhost:7118/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"","password":""}'
 ```
 
 ### 14.2 Frontend muncul tapi API gagal
