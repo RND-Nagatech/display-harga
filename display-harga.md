@@ -606,84 +606,83 @@ Cek:
 - Port `7118` tidak diblokir.
 - VPN/firewall tidak memblokir koneksi lokal.
 
-## 11. Step-by-Step Build Production
 
-### 11.1 Build frontend
+## 11. Step-by-Step Build & Deploy Production (Server/Network)
 
-```bash
-cd /Users/aandiyanti/Documents/RnD/PROJECT/display-harga
-npm --workspace display-fe run build
-```
+### 11.1 Clone Project dari GitHub
 
-Output:
-
-```text
-display-fe/dist
-```
-
-### 11.2 Jalankan backend production
+Clone project dari repository resmi:
 
 ```bash
-npm --workspace server run start
+git clone https://github.com/RND-Nagatech/display-harga.git
 ```
 
-Backend akan jalan di:
+### 11.2 Struktur Penempatan Folder
 
-```text
-http://localhost:7118
-```
+- **Backend (server):**  
+  Clone folder `server` ke:  
+  `/home/nodeapp/server`
 
-### 11.3 Preview build frontend
-
-Untuk test build lokal:
-
-```bash
-npm --workspace display-fe run preview -- --host 0.0.0.0 --port 8080
-```
-
-Buka:
-
-```text
-http://localhost:8080
-```
-
-Atau dari device lain:
-
-```text
-http://IP_SERVER:8080
-```
-
-### 11.4 Penting untuk production/static build
-
-Vite proxy hanya berlaku saat `npm run dev`.
-
-Untuk build static, tentukan API base URL sebelum build jika frontend dan backend beda host/port.
-
-Buat file:
-
-```text
-display-fe/.env.production
-```
-
-Isi:
-
-```env
-VITE_API_BASE_URL="http://IP_SERVER:7118/api"
-```
+- **Frontend (display-fe):**  
+  Clone folder `display-fe` ke:  
+  `/var/www/html/display-fe`
 
 Contoh:
 
-```env
-VITE_API_BASE_URL="http://192.168.1.25:7118/api"
-```
-
-Lalu build ulang:
-
 ```bash
-npm --workspace display-fe run build
+# Backend
+git clone https://github.com/RND-Nagatech/display-harga.git
+cp -r display-harga/server /home/nodeapp/server
+
+# Frontend
+cp -r display-harga/display-fe /var/www/html/display-fe
 ```
 
-Jika frontend dan backend disajikan dalam domain yang sama dengan reverse proxy `/api`, maka `VITE_API_BASE_URL` bisa dibiarkan default `/api`.
+> **Catatan:**  
+> Pastikan folder `server` dan `display-fe` berada di lokasi yang sesuai dengan kebutuhan server/hosting Anda.
+
+### 11.3 Setup Backend
+
+1. Masuk ke folder backend:
+  ```bash
+  cd /home/nodeapp/server
+  ```
+2. Install dependencies:
+  ```bash
+  npm install
+  ```
+3. Copy `.env.example` menjadi `.env` dan sesuaikan konfigurasi database:
+  ```bash
+  cp .env.example .env
+  nano .env
+  ```
+4. Jalankan backend:
+  ```bash
+  npm run start
+  ```
+   Backend berjalan di port sesuai `.env` (default: 7118).
+
+### 11.4 Setup Frontend
+
+1. Masuk ke folder frontend:
+  ```bash
+  cd /var/www/html/display-fe
+  ```
+2. Install dependencies:
+  ```bash
+  npm install
+  ```
+3. (Opsional) Edit file `.env.production` untuk set API URL jika backend beda host/port:
+  ```env
+  VITE_API_BASE_URL="http://IP_SERVER:7118/api"
+  ```
+4. Build frontend:
+  ```bash
+  npm run build
+  ```
+   Hasil build ada di `/var/www/html/display-fe/dist`.
+
+5. Konfigurasikan web server (Nginx/Apache) untuk serve folder `dist` sebagai static site.
 
 ## 12. Build untuk TV / Display
 

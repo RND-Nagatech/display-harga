@@ -309,7 +309,12 @@ function PriceTable({ title, rows, pageKey }: { title: string; rows: PriceGroup[
               <GoldOrbit className="is-row" />
               <span className="tv-monolith-table-kode">{item.kode_group}</span>
               <span className="tv-monolith-table-price">{formatPrice(item.harga)}</span>
-              <span className="tv-monolith-table-buyback">{formatPrice(item.harga_buyback)}</span>
+              <span className="tv-monolith-table-buyback">
+                {formatPrice(item.harga_buyback)}
+                {item.harga_buyback > 0 && (
+                  <span style={{ color: '#ff3b3b', fontWeight: 700, marginLeft: 2 }}>*</span>
+                )}
+              </span>
             </article>
           ))
         ) : (
