@@ -289,7 +289,7 @@ function PriceTable({ title, rows, pageKey }: { title: string; rows: PriceGroup[
 
       <div className="tv-monolith-buyback-note">
         <span>*</span>
-        Harga buyback mengacu pada potongan terendah.
+        Harga buyback menyesuaikan kondisi barang.
       </div>
 
       <div className="tv-monolith-table-head">
