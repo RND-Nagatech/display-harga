@@ -62,7 +62,7 @@ export default function Login() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       {/* Left — branding visual follows light/dark theme */}
       <aside
-        className="relative hidden lg:flex flex-col justify-between overflow-hidden border-r border-border bg-[radial-gradient(circle_at_18%_12%,hsl(var(--accent)/0.16),transparent_26%),linear-gradient(135deg,hsl(var(--card)),hsl(var(--secondary)))] p-12 text-foreground dark:bg-[linear-gradient(135deg,hsl(230_45%_8%/0.88),hsl(230_45%_4%/0.92))]"
+        className="relative hidden lg:flex flex-col justify-between overflow-hidden border-r border-border bg-[radial-gradient(circle_at_18%_12%,hsl(var(--accent)/0.16),transparent_26%),linear-gradient(135deg,hsl(var(--card)),hsl(var(--secondary)))] p-10 xl:p-12 text-foreground dark:bg-[linear-gradient(135deg,hsl(230_45%_8%/0.88),hsl(230_45%_4%/0.92))]"
       >
         <img src={loginBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-multiply dark:opacity-55 dark:mix-blend-normal" />
         <div className="relative z-10 flex items-center gap-3">
@@ -80,15 +80,16 @@ export default function Login() {
         <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-primary/10 blur-3xl dark:bg-[hsl(192_85%_55%_/_0.18)]" />
         <div className="pointer-events-none absolute top-1/3 right-1/4 h-64 w-64 rounded-full bg-warning/10 blur-3xl dark:bg-[hsl(280_80%_60%_/_0.18)]" />
 
-        <div className="relative z-10 max-w-md">
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight">
-            Tampilkan harga & promosi Anda dengan cara <span className="text-gradient-primary">modern</span>.
+        <div className="relative z-10 max-w-[640px]">
+          <h1 className="max-w-[640px] text-[42px] font-bold leading-[1.22] tracking-tight xl:text-5xl">
+              Tampilkan harga & promosi<br />
+              Anda dengan cara <span className="text-gradient-primary">modern</span>.
           </h1>
-          <p className="mt-4 text-sm text-muted-foreground leading-relaxed dark:text-tv-muted">
-            Kelola kategori harga emas, media video, dan tayangkan langsung ke layar TV toko Anda. Cepat, rapi, dan terlihat profesional.
-          </p>
+            <p className="mt-5 max-w-[620px] text-sm leading-relaxed text-muted-foreground dark:text-tv-muted">
+              Kelola kategori harga emas, media video, dan tayangkan langsung<br />ke layar TV toko Anda. Cepat, rapi, dan terlihat profesional.
+            </p>
 
-          <div className="mt-8 grid grid-cols-3 gap-4">
+          <div className="mt-8 grid max-w-[620px] grid-cols-3 gap-4">
             {[
               { v: "10+", l: "Kategori siap tayang" },
               { v: "Live", l: "Update real-time" },

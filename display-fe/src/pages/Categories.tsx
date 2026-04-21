@@ -49,11 +49,14 @@ const empty: CategoryDraft = {
   isActive: true,
 };
 
+
 export default function Categories() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<CategoryDraft>(empty);
   const [confirm, setConfirm] = useState<Category | null>(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const qc = useQueryClient();
 
   const { data: categories = [], isLoading } = useQuery({
@@ -65,6 +68,10 @@ export default function Categories() {
       categories.filter((i) => [i.code, i.name].join(" ").toLowerCase().includes(q.toLowerCase())),
     [categories, q]
   );
+
+  // Pagination logic
+  const totalPage = Math.max(1, Math.ceil(filtered.length / perPage));
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -146,28 +153,51 @@ export default function Categories() {
             {isLoading && (
               <TableRow><TableCell colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading...</TableCell></TableRow>
             )}
-            {filtered.map((i) => (
+            {paged.map((i) => (
               <TableRow key={i.id}>
                 <TableCell className="font-mono text-xs text-muted-foreground">{i.code}</TableCell>
                 <TableCell className="font-medium">{i.name}</TableCell>
-                <TableCell className="text-right tabular-nums font-semibold">{formatIDR(i.price)}</TableCell>
-                <TableCell className="text-right tabular-nums font-semibold">{formatIDR(i.buybackPrice)}</TableCell>
+                <TableCell className="text-right tabular-nums font-normal">{formatIDR(i.price)}</TableCell>
+                <TableCell className="text-right tabular-nums font-normal">{formatIDR(i.buybackPrice)}</TableCell>
                 <TableCell>
                   {i.isActive
-                    ? <Badge className="bg-success/10 text-success hover:bg-success/15 border-0">Aktif</Badge>
-                    : <Badge variant="secondary">Nonaktif</Badge>}
+                    ? <Badge className="bg-success/10 text-success hover:bg-success/15 border-0 font-medium">Aktif</Badge>
+                    : <Badge variant="secondary" className="font-medium">Nonaktif</Badge>}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
-                  <Button size="icon" variant="ghost" onClick={() => onEdit(i)}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => setConfirm(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <Button size="icon" variant="outline" onClick={() => onEdit(i)}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="outline-destructive" onClick={() => setConfirm(i)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
             ))}
-            {!isLoading && filtered.length === 0 && (
+            {!isLoading && paged.length === 0 && (
               <TableRow><TableCell colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Tidak ada kategori.</TableCell></TableRow>
             )}
+
           </TableBody>
         </Table>
+
+        {/* Pagination controls */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px" }}>
+          <div>
+            <label htmlFor="perPage" style={{ fontSize: 13, marginRight: 8 }}>Tampil:</label>
+            <select
+              id="perPage"
+              value={perPage}
+              onChange={e => { setPerPage(Number(e.target.value)); setPage(1); }}
+              style={{ border: "1px solid #ddd", borderRadius: 6, padding: "2px 8px", fontSize: 13 }}
+            >
+              {[10, 20, 50, 100].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Button size="sm" variant="ghost" disabled={page === 1} onClick={() => setPage(1)}>&laquo;</Button>
+            <Button size="sm" variant="ghost" disabled={page === 1} onClick={() => setPage(page - 1)}>&lsaquo;</Button>
+            <span style={{ fontSize: 13 }}>Halaman {page} dari {totalPage}</span>
+            <Button size="sm" variant="ghost" disabled={page === totalPage} onClick={() => setPage(page + 1)}>&rsaquo;</Button>
+            <Button size="sm" variant="ghost" disabled={page === totalPage} onClick={() => setPage(totalPage)}>&raquo;</Button>
+          </div>
+        </div>
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>

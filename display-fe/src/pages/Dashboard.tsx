@@ -48,7 +48,7 @@ export default function Dashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{s.label}</p>
-                  <p className="mt-2 text-2xl font-semibold text-foreground">{s.value}</p>
+                  <p className="mt-2 text-2xl font-medium text-foreground tabular-nums tracking-tight">{s.value}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{s.hint}</p>
                 </div>
                 <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.iconStyle}`}>
@@ -75,7 +75,7 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-foreground truncate">{i.name}</p>
                   <p className="text-xs text-muted-foreground">{i.code} · Buyback {formatIDR(i.buybackPrice)}</p>
                 </div>
-                <p className="text-sm font-semibold text-foreground tabular-nums">{formatIDR(i.price)}</p>
+                <p className="text-sm font-normal text-foreground tabular-nums">{formatIDR(i.price)}</p>
               </div>
             ))}
           </div>

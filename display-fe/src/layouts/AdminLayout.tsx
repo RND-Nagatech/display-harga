@@ -47,14 +47,14 @@ export default function AdminLayout() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
-        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
+      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar z-50">
+        <div className="flex h-16 items-center gap-3 border-b border-border bg-card px-6">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground shadow-glow">
             <Building2 className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-sidebar-foreground truncate">Display Harga Emas</p>
-            <p className="text-xs text-muted-foreground truncate">{settings?.companyName || ""}</p>
+            <p className="text-sm font-semibold text-foreground truncate">Display Harga Emas</p>
+            <p className="text-xs font-semibold text-muted-foreground truncate">{settings?.companyName || ""}</p>
           </div>
         </div>
 
@@ -88,8 +88,10 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 min-w-0">
-        <header className="relative z-40 hidden h-16 items-center justify-end border-b border-border bg-card/95 px-6 backdrop-blur lg:flex">
+      <main className="flex-1 min-w-0 lg:ml-64">
+        <header className="fixed top-0 left-0 lg:left-64 w-full lg:w-[calc(100%-16rem)] z-50 hidden h-16 items-center justify-end border-b border-border bg-card/95 px-6 backdrop-blur lg:flex">
+          {/* Spacer for fixed header */}
+          <div className="h-16 w-full absolute top-0 left-0 pointer-events-none" style={{zIndex: -1}} />
           <div className="flex items-center gap-4">
             <div className="flex h-9 items-center gap-2 rounded-full bg-secondary px-4 text-sm text-foreground">
               <span>Tanggal System : {systemDate}</span>
@@ -165,7 +167,7 @@ export default function AdminLayout() {
           })}
         </div>
 
-        <div className="px-6 py-5 lg:px-10 lg:py-4 max-w-[1400px] mx-auto animate-fade-up">
+        <div className="px-6 py-5 lg:px-10 lg:py-4 lg:pt-20 max-w-[1400px] mx-auto animate-fade-up">
           <Outlet />
         </div>
       </main>

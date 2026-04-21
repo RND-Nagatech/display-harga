@@ -141,9 +141,9 @@ export default function Users() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end items-center gap-1 flex-nowrap">
-                    <Button size="icon" variant="ghost" onClick={()=>onEdit(u)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={()=>setConfirm({ ...empty, id: u.id, username: u.username, level: u.level, isActive: u.isActive, password: "" })}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                    <Button size="icon" variant="outline" onClick={()=>onEdit(u)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="outline-destructive" onClick={()=>setConfirm({ ...empty, id: u.id, username: u.username, level: u.level, isActive: u.isActive, password: "" })}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
