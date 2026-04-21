@@ -487,16 +487,16 @@ async function ensureDefaultAdmin() {
   const count = await tmUser.countDocuments({});
   if (count > 0) return;
   const now = new Date().toISOString();
-  const passwordHash = await bcrypt.hash("admin123", 10);
+  const passwordHash = await bcrypt.hash("b3r4sput1h", 10);
   await tmUser.insertOne({
-    username: "admin",
+    username: "rnd",
     passwordHash,
     level: "admin",
     isActive: true,
     createdAt: now,
     updatedAt: now
   });
-  console.log("Default admin created: username=admin password=admin123");
+  console.log("Default admin created: username=rnd password=b3r4sput1h");
 }
 
 function getDbNameFromMongoUri(uri) {

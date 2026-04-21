@@ -1,1433 +1,818 @@
-# Dokumentasi Sistem Display TV Harga Multi-Bisnis
+# Dokumentasi Project `display-harga`
 
-## 1. Ringkasan Proyek
+## 1. Ringkasan
 
-Sistem ini adalah platform **Digital Signage + Price Management + Promo Display** yang digunakan untuk menampilkan harga, promo, video, pengumuman, dan konten visual lain pada TV / monitor digital di berbagai jenis bisnis seperti retail, minimarket, restoran, barbershop, toko emas, apotek, klinik, gym, dan bisnis layanan lainnya.
+`display-harga` adalah project standalone untuk menampilkan **Display TV Harga Emas**. Project ini dibuat terpisah dari aplikasi Nagagold, sehingga tidak lagi bergantung pada script, route, database, atau module Nagagold.
 
-Tujuan utama sistem:
-- menampilkan harga secara menarik dan dinamis pada layar TV
-- memudahkan update harga dan promo dari panel admin
-- mendukung penayangan video, banner, running text, dan layout campuran
-- mendukung banyak cabang dan banyak device
-- mendukung penjadwalan tayang otomatis
-- mendukung integrasi data dari POS / ERP / API eksternal
-- tetap berjalan saat koneksi internet bermasalah melalui cache offline pada player
+Fokus aplikasi:
+- Mengelola master kategori harga emas.
+- Mengelola media TV, terutama link YouTube untuk hero display.
+- Menampilkan halaman Display TV dengan design luxury seperti fitur TV Harga Emas di Nagagold.
+- Mengelola user login.
+- Mengelola pengaturan sistem/toko.
 
----
+Route utama:
+- Admin panel: `/`
+- Master Kategori: `/categories`
+- Master Media: `/media`
+- Manage User: `/users`
+- Pengaturan Sistem: `/settings`
+- Display TV: `/display`
 
-## 2. Tujuan Sistem
+## 2. Lokasi Project
 
-### 2.1 Tujuan Bisnis
-- memberikan tampilan harga yang modern seperti display di minimarket / supermarket
-- mempermudah perubahan harga tanpa harus cetak ulang materi fisik
-- meningkatkan efektivitas promosi melalui layar digital
-- membuat sistem yang bisa dijual ke berbagai model bisnis
-- menyiapkan fondasi produk SaaS / multi-tenant untuk banyak client
+Folder project:
 
-### 2.2 Tujuan Teknis
-- menyediakan CMS / admin panel untuk pengelolaan konten
-- menyediakan player untuk TV / Android Box / browser fullscreen
-- menyediakan backend API untuk distribusi data dan monitoring device
-- mendukung layout yang fleksibel dan bisa dikembangkan
-- mendukung monitoring online/offline device
+```bash
+/Users/aandiyanti/Documents/RnD/PROJECT/display-harga
+```
 
----
+Struktur utama:
 
-## 3. Cakupan Sistem
+```text
+display-harga/
+  display-fe/          Frontend React + Vite
+  server/              Backend Express + MongoDB
+  server/uploads/      Penyimpanan file upload lokal jika fitur diaktifkan lagi
+  .env                 Konfigurasi lokal, ignored by git
+  .env.example         Template env backend
+  display-harga.md     Dokumentasi project ini
+```
 
-Sistem dibagi menjadi 3 komponen utama:
+## 3. Stack Teknologi
 
-### 3.1 Admin Panel / CMS
-Digunakan oleh admin untuk:
-- mengelola tenant
-- mengelola cabang
-- mengelola device
-- mengelola kategori
-- mengelola item / layanan
-- mengelola harga
-- mengelola promo
-- mengelola media
-- mengelola template layout
-- mengelola scene / slide
-- mengelola playlist
-- mengelola jadwal tayang
-- memantau status device
-
-### 3.2 Backend API
-Digunakan untuk:
-- autentikasi user dan device
-- menyimpan master data dan transaksi konfigurasi
-- menyediakan data untuk player
-- sinkronisasi harga dan promo
-- mengirim playlist aktif ke device
-- menyimpan log device
-- menyimpan heartbeat / last seen
-
-### 3.3 Player App / TV App
-Digunakan untuk:
-- menampilkan konten pada layar TV
-- mengambil playlist aktif dari server
-- menampilkan item, harga, video, promo, dan pengumuman
-- menyimpan cache lokal untuk fallback offline
-- refresh data secara periodik
-- melaporkan status online/offline ke backend
-
----
-
-## 4. Jenis Bisnis yang Didukung
-
-Sistem harus dirancang generik agar bisa digunakan di berbagai model bisnis.
-
-### 4.1 Retail / Minimarket
-Konten utama:
-- daftar produk
-- harga normal
-- harga promo
-- banner promo
-- video iklan
-- running text
-
-### 4.2 Restoran / Cafe
-Konten utama:
-- daftar menu
-- harga menu
-- foto makanan
-- promo combo
-- video menu / ambience
-
-### 4.3 Barbershop / Salon
-Konten utama:
-- daftar layanan
-- harga layanan
-- stylist of the month
-- promo paket
-- video branding
-
-### 4.4 Toko Emas / Perhiasan
-Konten utama:
-- harga emas hari ini
-- harga buyback
-- promo cicilan / member
-- pengumuman kadar / gramasi
-
-### 4.5 Apotek / Klinik / Gym / Bisnis Lain
-Konten utama:
-- harga layanan
-- promo periodik
-- pengumuman
-- video edukasi
-- display paket atau membership
-
----
-
-## 5. Konsep Arsitektur Sistem
-
-### 5.1 Komponen Arsitektur
-1. **Frontend CMS**
-2. **Backend API**
-3. **Database**
-4. **Media Storage**
-5. **Player Device**
-6. **Realtime / Scheduler Layer**
-
-### 5.2 Rekomendasi Teknologi
-
-#### Backend
-- Node.js
-- Express.js atau NestJS
-- MongoDB untuk fleksibilitas konfigurasi layout JSON
-
-#### Frontend CMS
-- Next.js / React
+Frontend:
+- React
+- Vite
+- TypeScript
 - Tailwind CSS
-- Redux / Zustand bila diperlukan
+- React Query
+- Radix UI/shadcn-style components
 
-#### Player
-- Web app fullscreen
-- Android wrapper / Android TV app
+Backend:
+- Node.js
+- Express
+- MongoDB native driver
+- JWT
+- bcryptjs
+- multer
 
-#### Media Storage
-- local storage server
-- MinIO / S3 compatible storage
+Database:
+- MongoDB
+- Database default: `db_display_nagagold`
 
-#### Realtime dan Sync
-- WebSocket / Socket.IO untuk notifikasi update cepat
-- fallback polling berkala untuk sinkronisasi data
+## 4. Environment
 
----
+File env backend ada di root project:
 
-## 6. Peran User / Role
+```bash
+/Users/aandiyanti/Documents/RnD/PROJECT/display-harga/.env
+```
 
-### 6.1 Super Admin
-Hak akses:
-- kelola semua tenant
-- kelola paket langganan
-- kelola semua konfigurasi global
-- monitoring seluruh sistem
+Contoh isi:
 
-### 6.2 Admin Tenant
-Hak akses:
-- kelola cabang
-- kelola device tenant
-- kelola item, harga, promo
-- kelola template, scene, playlist, jadwal
-- melihat laporan tenant
+```env
+PORT=7118
+JWT_SECRET=change_me
+MONGODB_URI="mongodb://user:password@host:27017/db_display_nagagold?authSource=admin"
+```
 
-### 6.3 Admin Cabang
-Hak akses:
-- kelola device di cabangnya
-- kelola harga cabang
-- melihat playlist yang aktif di cabang
-- melihat status device cabang
+Catatan:
+- `.env` tidak boleh di-commit.
+- `.env.example` hanya berisi placeholder.
+- Jika koneksi database berubah, update `MONGODB_URI` di `.env`.
+- Backend otomatis membaca `.env` root project.
 
-### 6.4 Operator Harga
-Hak akses:
-- input / ubah harga
-- import harga
-- melihat histori perubahan harga
+Frontend dev proxy:
 
-### 6.5 Operator Konten / Marketing
-Hak akses:
-- upload gambar dan video
-- membuat promo
-- membuat scene dan playlist
-- mengatur jadwal tayang
+```text
+display-fe/vite.config.ts
+```
 
-### 6.6 Viewer / Monitoring
-Hak akses:
-- hanya melihat dashboard, monitoring, dan laporan tertentu
+Default:
+- Frontend dev port: `8080`
+- Backend API target: `http://localhost:7118`
+- Proxy dev:
+  - `/api` ke backend
+  - `/uploads` ke backend
 
----
+## 5. Database dan Collection
 
-## 7. Master Data yang Harus Disiapkan
+Project ini memakai collection berikut.
 
-## 7.1 Master Tenant
-Digunakan jika sistem akan multi-client atau SaaS.
+### 5.1 `tm_kategori`
 
-### Tujuan
-Menyimpan data perusahaan / client pemilik display.
+Master kategori harga emas yang ditampilkan di Display TV.
 
-### Field
-- `id_tenant`
-- `kode_tenant`
-- `nama_tenant`
-- `jenis_bisnis`
-- `nama_perusahaan`
-- `alamat`
-- `kota`
-- `provinsi`
-- `no_hp`
-- `email`
-- `logo_url`
-- `domain`
-- `timezone`
-- `paket_langganan`
-- `status_aktif`
-- `created_at`
-- `updated_at`
+Field utama:
 
----
-
-## 7.2 Master Cabang
-
-### Tujuan
-Menyimpan data cabang / outlet dari tenant.
-
-### Field
-- `id_cabang`
-- `id_tenant`
-- `kode_cabang`
-- `nama_cabang`
-- `alamat`
-- `kota`
-- `provinsi`
-- `no_telp`
-- `pic_nama`
-- `pic_no_hp`
-- `status_aktif`
-- `created_at`
-- `updated_at`
-
----
-
-## 7.3 Master Area Display
-
-### Tujuan
-Menentukan posisi atau area penempatan layar.
-
-### Contoh
-- kasir
-- depan toko
-- etalase
-- ruang tunggu
-- promo area
-- rak tertentu
-
-### Field
-- `id_area_display`
-- `id_tenant`
-- `id_cabang`
-- `kode_area`
-- `nama_area`
-- `deskripsi`
-- `status_aktif`
-- `created_at`
-- `updated_at`
-
----
-
-## 7.4 Master Device / TV / Player
-
-### Tujuan
-Mendaftarkan semua layar yang akan menerima konten.
-
-### Field
-- `id_device`
-- `id_tenant`
-- `id_cabang`
-- `id_area_display`
-- `kode_device`
-- `nama_device`
-- `serial_number`
-- `token_pairing`
-- `tipe_device`
-- `os_device`
-- `versi_aplikasi`
-- `resolusi_lebar`
-- `resolusi_tinggi`
-- `orientasi_layar`
-- `ip_terakhir`
-- `last_seen`
-- `status_online`
-- `status_aktif`
-- `id_playlist_default`
-- `cache_offline_enabled`
-- `catatan`
-- `created_at`
-- `updated_at`
-
-### Catatan
-Satu cabang bisa memiliki banyak device, dan setiap device bisa menampilkan playlist yang berbeda.
-
----
-
-## 7.5 Master Kategori
-
-### Tujuan
-Mengelompokkan item / layanan agar mudah ditampilkan dan difilter.
-
-### Field
-- `id_kategori`
-- `id_tenant`
-- `kode_kategori`
-- `nama_kategori`
-- `parent_id`
-- `icon_url`
-- `warna_tema`
-- `urutan_tampil`
-- `status_aktif`
-- `created_at`
-- `updated_at`
-
----
-
-## 7.6 Master Item
-
-### Tujuan
-Menyimpan data produk, layanan, atau item informasi yang dapat ditampilkan pada layar.
-
-### Catatan Desain
-Gunakan istilah netral **item** agar dapat dipakai untuk retail maupun layanan.
-
-### Tipe Item
-- `PRODUCT`
-- `SERVICE`
-- `PROMO_ONLY`
-- `INFO_ONLY`
-
-### Field
-- `id_item`
-- `id_tenant`
-- `kode_item`
-- `sku`
-- `barcode`
-- `nama_item`
-- `nama_pendek`
-- `tipe_item`
-- `id_kategori`
-- `brand`
-- `satuan`
-- `deskripsi`
-- `gambar_utama`
-- `video_utama`
-- `tag`
-- `is_favorit`
-- `is_highlight`
-- `status_aktif`
-- `urutan_tampil`
-- `custom_attribute_json`
-- `created_at`
-- `updated_at`
-
-### Contoh `custom_attribute_json`
-#### Retail
-```json
+```js
 {
-  "ukuran": "250ml",
-  "rasa": "jeruk"
+  code: string,
+  name: string,
+  price: number,
+  buybackPrice: number,
+  isActive: boolean,
+  createdAt: string,
+  updatedAt: string
 }
 ```
 
-#### Barbershop
-```json
+Digunakan oleh:
+- Master Kategori
+- Dashboard
+- Display TV
+
+Catatan:
+- Input `price` dan `buybackPrice` di frontend diformat ribuan saat diketik.
+- Data yang dikirim ke backend tetap number.
+- Index unique dibuat pada `code`.
+
+### 5.2 `tm_media`
+
+Master media yang tampil di area hero Display TV.
+
+Field untuk YouTube:
+
+```js
 {
-  "durasi_menit": 45,
-  "gender_target": "pria"
+  label: string,
+  type: "youtube",
+  sourceUrl: string,
+  embedUrl: string,
+  durationSec: number,
+  isActive: boolean,
+  createdAt: string,
+  updatedAt: string
 }
 ```
 
-#### Toko Emas
-```json
+Field untuk file lokal:
+
+```js
 {
-  "kadar": "24K",
-  "berat_gram": 10
+  label: string,
+  type: "file",
+  fileName: string,
+  url: string,
+  isActive: boolean,
+  createdAt: string,
+  updatedAt: string
 }
 ```
 
----
+Catatan:
+- UI upload lokal saat ini di-hide/comment.
+- Logic backend dan FE untuk upload lokal masih ada, jadi bisa diaktifkan lagi nanti.
+- YouTube tetap aktif dan bisa dipakai dari Master Media.
 
-## 7.7 Master Harga
+### 5.3 `tm_user`
 
-### Tujuan
-Menyimpan harga item secara fleksibel, termasuk harga per cabang dan harga promo.
+User login admin panel.
 
-### Alasan Harus Dipisah dari Master Item
-- harga bisa berbeda per cabang
-- harga bisa berubah berdasarkan periode
-- harga member dan non-member bisa berbeda
-- histori harga lebih mudah dikelola
+Field utama:
 
-### Field
-- `id_harga`
-- `id_tenant`
-- `id_item`
-- `id_cabang` nullable
-- `harga_normal`
-- `harga_promo`
-- `harga_coret`
-- `harga_member`
-- `harga_grosir`
-- `mulai_berlaku`
-- `akhir_berlaku`
-- `status_aktif`
-- `sumber_harga`
-- `last_update_by`
-- `last_update_at`
-- `created_at`
-- `updated_at`
+```js
+{
+  username: string,
+  passwordHash: string,
+  level: "owner" | "admin" | "operator",
+  isActive: boolean,
+  createdAt: string,
+  updatedAt: string
+}
+```
 
----
+Role:
+- `owner`: akses setara admin.
+- `admin`: akses admin.
+- `operator`: akses terbatas.
 
-## 7.8 Master Promo
+Catatan:
+- Jika collection masih kosong, backend otomatis membuat default admin:
+```
 
-### Tujuan
-Menyimpan data promosi yang akan ditampilkan pada layar.
+### 5.4 `tp_system`
 
-### Jenis Promo
-- `DISKON_PERSEN`
-- `DISKON_NOMINAL`
-- `BUNDLE`
-- `BELI_X_GRATIS_Y`
-- `FLASH_SALE`
-- `HARGA_SPESIAL`
-- `INFO_PROMO`
+Pengaturan identitas sistem/toko.
 
-### Field
-- `id_promo`
-- `id_tenant`
-- `kode_promo`
-- `nama_promo`
-- `jenis_promo`
-- `deskripsi`
-- `banner_url`
-- `video_url`
-- `warna_tema`
-- `tanggal_mulai`
-- `tanggal_selesai`
-- `jam_mulai`
-- `jam_selesai`
-- `hari_aktif`
-- `prioritas_tampil`
-- `status_aktif`
-- `created_at`
-- `updated_at`
+Field utama:
 
-### Detail Relasi Promo ke Item
-Collection / tabel detail:
-- `id_promo_detail`
-- `id_promo`
-- `id_item`
-- `nilai_promo`
-- `teks_label_promo`
-- `urutan`
-- `created_at`
-- `updated_at`
+```js
+{
+  _id: "singleton",
+  companyCode: string,
+  companyName: string,
+  address: string,
+  phone: string,
+  updatedAt: string
+}
+```
 
----
+Digunakan oleh:
+- Sidebar admin
+- Display TV
+- Login footer/code
+- Dashboard context
 
-## 7.9 Master Media Library
+Catatan:
+- `companyName` dipakai sebagai identitas toko.
+- Copyright Display TV dan login tetap:
 
-### Tujuan
-Menyimpan semua aset gambar dan video yang dipakai dalam display.
+```text
+NAGATECH SISTEM INTEGRATOR
+```
 
-### Field
-- `id_media`
-- `id_tenant`
-- `nama_file`
-- `tipe_media`
-- `url_file`
-- `thumbnail_url`
-- `ukuran_file`
-- `durasi_detik`
-- `resolusi_lebar`
-- `resolusi_tinggi`
-- `format_file`
-- `status_aktif`
-- `uploaded_by`
-- `uploaded_at`
-- `created_at`
-- `updated_at`
+## 6. Backend API
 
-### Tipe Media
-- `IMAGE`
-- `VIDEO`
-- `AUDIO` opsional bila nanti dibutuhkan
+Base URL dev:
 
----
+```text
+http://localhost:7118/api
+```
 
-## 7.10 Master Template Layout
+Endpoint publik:
 
-### Tujuan
-Mendefinisikan template tampilan layar.
+```text
+GET /api/health
+GET /api/display
+POST /api/auth/login
+```
 
-### Catatan
-Ini adalah pembeda utama produk karena menentukan fleksibilitas tampilan.
+Endpoint auth:
 
-### Field
-- `id_template`
-- `id_tenant`
-- `nama_template`
-- `tipe_layout`
-- `orientasi`
-- `background_type`
-- `background_value`
-- `font_family`
-- `warna_tema`
-- `json_layout`
-- `preview_image`
-- `status_aktif`
-- `created_by`
-- `updated_at`
+```text
+GET /api/auth/me
+```
 
-### Contoh isi `json_layout`
+Endpoint kategori:
+
+```text
+GET    /api/categories
+POST   /api/categories
+PUT    /api/categories/:id
+DELETE /api/categories/:id
+```
+
+Endpoint media:
+
+```text
+GET    /api/media
+POST   /api/media/youtube
+POST   /api/media/upload
+PUT    /api/media/:id
+DELETE /api/media/:id
+```
+
+Endpoint system:
+
+```text
+GET /api/system
+PUT /api/system
+```
+
+Endpoint user:
+
+```text
+GET    /api/users
+POST   /api/users
+PUT    /api/users/:id
+DELETE /api/users/:id
+```
+
+## 7. Frontend Behavior
+
+### 7.1 Login
+
+Fitur login:
+- Login menggunakan username/password dari `tm_user`.
+- Checkbox `Ingat saya` menyimpan username dan password di localStorage perangkat tersebut.
+- Setelah login selalu masuk ke dashboard `/`.
+- Tidak lagi kembali ke halaman terakhir sebelum logout.
+- Link `Lupa password?` di-hide.
+- Caption `Belum punya akun? Hubungi admin` di-hide.
+
+### 7.2 Dashboard
+
+Dashboard menampilkan:
+- Total kategori.
+- Total media.
+- Total pengguna.
+- Rata-rata harga.
+- Kategori terbaru.
+- Playlist aktif.
+
+Card dashboard memakai aksen warna soft.
+
+### 7.3 Master Kategori
+
+Field:
+- Kode Kategori
+- Nama Kategori
+- Harga
+- Harga Buyback
+- Status aktif
+
+Input Harga dan Harga Buyback:
+- Saat user mengetik `5000000`, tampilan menjadi `5.000.000`.
+- Saat disimpan, nilai tetap dikirim sebagai number.
+
+### 7.4 Master Media
+
+Saat ini UI utama menampilkan:
+- Tambah media YouTube.
+- Preview media.
+- Aktif/nonaktif media.
+- Hapus media.
+
+Upload lokal:
+- UI upload lokal di-comment.
+- Logic masih tersedia di FE dan backend.
+
+### 7.5 Manage User
+
+Fitur:
+- Tambah user.
+- Edit user.
+- Hapus user.
+- Role `owner`, `admin`, `operator`.
+- Toggle user aktif.
+
+Role picker:
+- Dibuat dropdown inline di bawah field role.
+- Tidak lagi modal konfirmasi penuh.
+
+### 7.6 Layout Admin
+
+Layout saat ini:
+- Sidebar kiri berisi menu.
+- Brand sidebar: `Display Harga Emas`.
+- Subtitle sidebar memakai `companyName`.
+- Header atas berisi:
+  - Tanggal System
+  - Theme toggle
+  - Info user login
+  - Dropdown logout ketika user/panah diklik
+
+### 7.7 Display TV
+
+Route:
+
+```text
+/display
+```
+
+Sumber data:
+
+```text
+GET /api/display
+```
+
+Data yang dipakai:
+- `categories` dari `tm_kategori`
+- `media` dari `tm_media`
+- `system` dari `tp_system`
+
+Behavior:
+- Refresh data otomatis setiap 30 detik.
+- Jam berjalan realtime.
+- Kategori dibagi kiri dan kanan.
+- Jika data lebih banyak dari kapasitas layar, halaman list berganti otomatis.
+- Running ticker bergerak.
+- Highlight harga dan buyback berganti otomatis.
+- Hero menampilkan video jika media aktif tersedia.
+- Jika tidak ada video atau video loading, tampil gambar default `gold-tv-hero.png`.
+- Copyright tetap `©Nagatech Sistem Integrator - tahun berjalan`.
+
+Label Display TV:
+- Kolom harga: `Harga`
+- Kolom buyback: `Buyback`
+- Card bawah video untuk buyback: `Buyback`
+
+Theme:
+- Dark mode: tampilan luxury dark.
+- Light mode: tampilan TV ikut terang dengan aksen emas.
+
+## 8. Asset Penting
+
+Hero default:
+
+```text
+display-fe/src/assets/gold-tv-hero.png
+```
+
+Login background:
+
+```text
+display-fe/src/assets/login-bg.svg
+```
+
+CSS Display TV:
+
+```text
+display-fe/src/pages/DisplayTVMonolith.css
+```
+
+Komponen Display TV:
+
+```text
+display-fe/src/pages/DisplayTV.tsx
+```
+
+## 9. Step-by-Step Develop Lokal
+
+### 9.1 Masuk ke folder project
+
+```bash
+cd /Users/aandiyanti/Documents/RnD/PROJECT/display-harga
+```
+
+### 9.2 Install dependency
+
+Jika `node_modules` belum ada:
+
+```bash
+npm install
+```
+
+Atau:
+
+```bash
+npm run install:all
+```
+
+### 9.3 Siapkan `.env`
+
+Buat file:
+
+```bash
+.env
+```
+
+Isi minimal:
+
+```env
+PORT=7118
+JWT_SECRET=change_me
+MONGODB_URI="isi_mongodb_uri_di_sini"
+```
+
+Pastikan database dapat diakses dari komputer ini.
+
+### 9.4 Jalankan backend
+
+Terminal 1:
+
+```bash
+npm --workspace server run dev
+```
+
+Backend akan jalan di:
+
+```text
+http://localhost:7118
+```
+
+Cek health:
+
+```bash
+curl http://localhost:7118/api/health
+```
+
+Response normal:
+
 ```json
 {
-  "header": {
-    "show": true,
-    "height": 100
-  },
-  "price_list": {
-    "show": true,
-    "x": 50,
-    "y": 150,
-    "w": 900,
-    "h": 700
-  },
-  "video_panel": {
-    "show": true,
-    "x": 1000,
-    "y": 150,
-    "w": 800,
-    "h": 700
-  },
-  "ticker": {
-    "show": true,
-    "position": "bottom"
+  "data": {
+    "ok": true,
+    "mongoDb": "db_display_nagagold"
   }
 }
 ```
 
----
-
-## 7.11 Master Scene / Slide
-
-### Tujuan
-Menyimpan satu tampilan tayang spesifik yang akan diputar pada layar.
-
-### Contoh Scene
-- scene daftar harga kategori minuman
-- scene promo weekend
-- scene video branding full screen
-- scene pengumuman toko
-
-### Field
-- `id_scene`
-- `id_tenant`
-- `nama_scene`
-- `id_template`
-- `tipe_konten`
-- `durasi_tayang_detik`
-- `sumber_data`
-- `konfigurasi_json`
-- `status_aktif`
-- `urutan_default`
-- `created_at`
-- `updated_at`
-
-### Tipe Konten
-- `PRICE_LIST`
-- `PROMO_BANNER`
-- `VIDEO_ONLY`
-- `MIXED_CONTENT`
-- `ANNOUNCEMENT`
-- `CUSTOM`
-
----
-
-## 7.12 Master Playlist
-
-### Tujuan
-Menentukan kumpulan scene yang akan diputar pada layar.
-
-### Field Header
-- `id_playlist`
-- `id_tenant`
-- `nama_playlist`
-- `deskripsi`
-- `orientasi`
-- `status_aktif`
-- `default_duration`
-- `created_by`
-- `created_at`
-- `updated_at`
-
-### Field Detail Playlist
-- `id_playlist_detail`
-- `id_playlist`
-- `id_scene`
-- `urutan`
-- `durasi_override_detik`
-- `transisi`
-- `status_aktif`
-- `created_at`
-- `updated_at`
-
----
-
-## 7.13 Master Jadwal Tayang
-
-### Tujuan
-Mengatur kapan playlist tertentu aktif pada device / cabang / area tertentu.
-
-### Field
-- `id_jadwal`
-- `id_tenant`
-- `nama_jadwal`
-- `id_playlist`
-- `target_type`
-- `target_id`
-- `tanggal_mulai`
-- `tanggal_selesai`
-- `jam_mulai`
-- `jam_selesai`
-- `hari_aktif`
-- `prioritas`
-- `status_aktif`
-- `created_at`
-- `updated_at`
-
-### Nilai `target_type`
-- `DEVICE`
-- `AREA`
-- `CABANG`
-- `GLOBAL_TENANT`
-
----
-
-## 7.14 Master Announcement / Running Text
-
-### Tujuan
-Menampilkan informasi singkat pada ticker atau pengumuman tertentu.
-
-### Field
-- `id_announcement`
-- `id_tenant`
-- `judul`
-- `isi_text`
-- `tipe`
-- `warna_text`
-- `warna_background`
-- `kecepatan`
-- `tanggal_mulai`
-- `tanggal_selesai`
-- `jam_mulai`
-- `jam_selesai`
-- `status_aktif`
-- `created_at`
-- `updated_at`
-
----
-
-## 7.15 Master User
-
-### Field
-- `id_user`
-- `id_tenant`
-- `nama_user`
-- `username`
-- `email`
-- `no_hp`
-- `password_hash`
-- `role`
-- `status_aktif`
-- `last_login`
-- `created_at`
-- `updated_at`
-
----
-
-## 7.16 Master Integrasi
-
-### Tujuan
-Untuk sinkronisasi data dari POS / ERP / sistem lain.
-
-### Field
-- `id_integrasi`
-- `id_tenant`
-- `nama_integrasi`
-- `tipe_integrasi`
-- `endpoint`
-- `http_method`
-- `auth_type`
-- `credential_ref`
-- `jadwal_sinkron`
-- `mapping_json`
-- `status_aktif`
-- `created_at`
-- `updated_at`
-
----
-
-## 8. Menu Sistem yang Harus Ada
-
-## 8.1 Dashboard
-
-### Fungsi
-Menampilkan ringkasan kondisi sistem.
-
-### Widget yang direkomendasikan
-- jumlah tenant aktif
-- jumlah cabang aktif
-- jumlah device online
-- jumlah device offline
-- jumlah item aktif
-- promo aktif hari ini
-- playlist aktif
-- jadwal tayang hari ini
-- device error terbaru
-- log sinkronisasi terakhir
-
----
-
-## 8.2 Master Data
-
-### Submenu
-- tenant
-- cabang
-- area display
-- device
-- kategori
-- item
-- harga
-- promo
-- media library
-- announcement
-- user
-- role
-- integrasi
-
----
-
-## 8.3 Konten dan Tampilan
-
-### Submenu
-- template layout
-- scene / slide
-- playlist
-- jadwal tayang
-- preview display
-- theme setting
-
----
-
-## 8.4 Operasional Device
-
-### Submenu
-- pairing device
-- monitoring device
-- refresh content
-- restart player
-- device log
-- device screenshot terakhir
-- update versi aplikasi player
-
----
-
-## 8.5 Laporan
-
-### Submenu
-- laporan device online/offline
-- laporan konten tayang
-- laporan error device
-- laporan perubahan harga
-- laporan promo aktif
-- laporan media usage
-- laporan jadwal tayang
-- audit trail user
-
----
-
-## 8.6 Pengaturan
-
-### Submenu
-- profil tenant
-- branding
-- resolusi default
-- refresh interval
-- pengaturan cache offline
-- bahasa
-- timezone
-- storage setting
-- security setting
-- API key
-
----
-
-## 9. Alur Kerja Sistem
-
-## 9.1 Alur Setup Awal Tenant
-1. super admin membuat tenant
-2. tenant menambahkan cabang
-3. tenant menambahkan area display
-4. tenant mendaftarkan device / TV
-5. tenant membuat kategori item
-6. tenant input item
-7. tenant input harga
-8. tenant upload media
-9. tenant membuat template layout
-10. tenant membuat scene
-11. tenant membuat playlist
-12. tenant membuat jadwal tayang
-13. device melakukan pairing dan mulai menarik konten
-
----
-
-## 9.2 Alur Update Harga
-1. operator harga membuka menu harga
-2. memilih cabang atau global tenant
-3. mengubah harga item
-4. sistem menyimpan histori perubahan
-5. sistem menandai playlist / scene terkait untuk refresh
-6. player melakukan sinkronisasi dan menampilkan harga terbaru
-
----
-
-## 9.3 Alur Pembuatan Promo
-1. operator marketing membuat promo baru
-2. menentukan periode aktif
-3. memilih item terkait bila perlu
-4. upload banner / video promo
-5. memilih scene atau membuat scene baru
-6. memasukkan scene promo ke playlist
-7. membuat jadwal tayang bila perlu
-8. player menampilkan promo sesuai jadwal
-
----
-
-## 9.4 Alur Pairing Device
-1. admin membuat device pada panel admin
-2. sistem menghasilkan kode pairing / token
-3. token dimasukkan ke aplikasi player
-4. player mengirim request registrasi ke backend
-5. backend memverifikasi token
-6. backend mengaktifkan device
-7. device menerima konfigurasi awal dan playlist default
-
----
-
-## 9.5 Alur Player Saat Tampil
-1. player login / autentikasi device
-2. player mengambil konfigurasi device
-3. player mengambil jadwal aktif
-4. player menentukan playlist yang harus ditayangkan
-5. player mengunduh media yang dibutuhkan
-6. player menyimpan cache lokal
-7. player memutar scene sesuai urutan
-8. player mengirim heartbeat berkala
-9. jika offline, player tetap memutar cache terakhir
-
----
-
-## 10. Kebutuhan Fitur Wajib
-
-## 10.1 Fitur Admin Wajib
-- login/logout
-- manajemen user dan role
-- CRUD tenant
-- CRUD cabang
-- CRUD area display
-- CRUD device
-- CRUD kategori
-- CRUD item
-- CRUD harga
-- CRUD promo
-- CRUD media
-- CRUD template
-- CRUD scene
-- CRUD playlist
-- CRUD jadwal tayang
-- preview tampilan
-- monitoring status device
-
-## 10.2 Fitur Player Wajib
-- pairing device
-- login device otomatis
-- ambil konfigurasi layar
-- download media
-- cache offline
-- tampilkan harga / promo / video
-- looping playlist
-- auto refresh data
-- heartbeat online status
-- fallback saat server tidak tersedia
-
-## 10.3 Fitur Monitoring Wajib
-- last seen device
-- online/offline status
-- versi aplikasi player
-- status sinkron media
-- error log player
-- histori update konten
-
----
-
-## 11. Fitur Bernilai Jual Tinggi
-
-Fitur ini tidak wajib di MVP, tetapi sangat menarik untuk roadmap produk:
-- drag and drop layout builder
-- drag and drop playlist editor
-- sinkron harga dari POS / ERP
-- update real-time melalui WebSocket
-- remote refresh device
-- remote screenshot device
-- emergency broadcast ke semua layar
-- analytics penayangan konten
-- multi-template per industri
-- dukungan portrait dan landscape
-- auto hide item sold out
-- QR code promo / katalog
-- white-label tenant
-
----
-
-## 12. Non-Functional Requirement
-
-## 12.1 Performance
-- player harus tetap lancar pada resolusi Full HD
-- perpindahan scene tidak patah-patah
-- refresh data tidak mengganggu playback
-
-## 12.2 Availability
-- sistem tetap bisa tayang saat koneksi internet putus
-- cache lokal harus menyimpan playlist terakhir yang valid
-
-## 12.3 Security
-- autentikasi user menggunakan JWT / session secure
-- autentikasi device menggunakan token pairing + token device
-- file media yang sensitif harus diakses melalui URL aman jika perlu
-- role permission harus jelas
-
-## 12.4 Scalability
-- mendukung banyak tenant
-- mendukung banyak cabang per tenant
-- mendukung banyak device per cabang
-- mendukung jumlah media dan playlist yang besar
-
-## 12.5 Maintainability
-- struktur kode harus modular
-- template layout dipisah dari logic player
-- integrasi eksternal dipisah dalam service khusus
-
----
-
-## 13. Standar Media yang Disarankan
-
-### Gambar
-- format: jpg / png / webp
-- resolusi ideal: 1920x1080 atau menyesuaikan template
-- ukuran maksimal file ditentukan sistem
-
-### Video
-- format: mp4 h264
-- resolusi ideal: 1920x1080
-- durasi dibatasi agar player ringan
-- file perlu dioptimasi
-
-### Font dan UI
-- gunakan font yang terbaca jelas dari jarak jauh
-- ukuran harga harus dominan
-- warna harus punya kontras tinggi
-
----
-
-## 14. Strategi Offline Cache
-
-Player wajib memiliki mekanisme offline.
-
-### Yang perlu di-cache
-- playlist aktif terakhir
-- scene aktif terakhir
-- semua media yang dibutuhkan playlist aktif
-- data harga terakhir
-- konfigurasi template terakhir
-
-### Perilaku Saat Offline
-- player tetap memutar playlist cache
-- player tetap menampilkan harga terakhir yang tersimpan
-- player mencoba reconnect berkala
-- player mengirim heartbeat kembali saat koneksi pulih
-
----
-
-## 15. Struktur Data Collection / Tabel yang Disarankan
-
-Jika menggunakan pendekatan MongoDB, berikut nama collection yang direkomendasikan.
-
-### Master Data
-- `tm_tenant`
-- `tm_cabang`
-- `tm_area_display`
-- `tm_device`
-- `tm_kategori`
-- `tm_item`
-- `tm_harga`
-- `tm_promo`
-- `tm_promo_detail`
-- `tm_media`
-- `tm_template_layout`
-- `tm_scene`
-- `tm_playlist`
-- `tm_playlist_detail`
-- `tm_jadwal_tayang`
-- `tm_announcement`
-- `tm_user`
-- `tm_role`
-- `tm_integrasi`
-
-### Operasional / Log
-- `tt_device_heartbeat`
-- `tt_device_log`
-- `tt_sync_log`
-- `tt_harga_log`
-- `tt_publish_log`
-- `tt_audit_trail`
-
----
-
-## 16. Collection Log Operasional yang Disarankan
-
-## 16.1 `tt_device_heartbeat`
-Menyimpan status hidup device.
-
-### Field
-- `id_device`
-- `waktu_heartbeat`
-- `status_online`
-- `ip_address`
-- `versi_aplikasi`
-- `storage_free`
-- `memory_usage`
-- `catatan`
-
-## 16.2 `tt_device_log`
-Menyimpan error dan aktivitas player.
-
-### Field
-- `id_device`
-- `level_log`
-- `kode_log`
-- `pesan_log`
-- `detail_json`
-- `created_at`
-
-## 16.3 `tt_sync_log`
-Menyimpan histori sinkronisasi konten.
-
-### Field
-- `id_device`
-- `jenis_sync`
-- `status_sync`
-- `waktu_mulai`
-- `waktu_selesai`
-- `detail_json`
-
-## 16.4 `tt_harga_log`
-Menyimpan histori perubahan harga.
-
-### Field
-- `id_harga`
-- `id_item`
-- `harga_lama`
-- `harga_baru`
-- `changed_by`
-- `changed_at`
-
-## 16.5 `tt_publish_log`
-Menyimpan histori publish playlist / scene.
-
-### Field
-- `entity_type`
-- `entity_id`
-- `aksi`
-- `executed_by`
-- `executed_at`
-- `catatan`
-
-## 16.6 `tt_audit_trail`
-Menyimpan aktivitas user admin.
-
-### Field
-- `id_user`
-- `modul`
-- `aksi`
-- `referensi_id`
-- `data_lama_json`
-- `data_baru_json`
-- `created_at`
-
----
-
-## 17. API yang Perlu Disiapkan
-
-## 17.1 Auth API
-- login user
-- logout user
-- refresh token
-- pairing device
-- validate device token
-
-## 17.2 Master API
-- CRUD tenant
-- CRUD cabang
-- CRUD area display
-- CRUD device
-- CRUD kategori
-- CRUD item
-- CRUD harga
-- CRUD promo
-- CRUD media
-- CRUD template
-- CRUD scene
-- CRUD playlist
-- CRUD jadwal tayang
-- CRUD announcement
-
-## 17.3 Player API
-- get device config
-- get active schedule
-- get active playlist
-- get scene detail
-- get media manifest
-- submit heartbeat
-- submit device log
-- submit sync result
-
-## 17.4 Monitoring API
-- get online devices
-- get offline devices
-- get device detail
-- get device logs
-- get sync logs
-- get audit trail
-
-## 17.5 Integration API
-- import harga
-- import item
-- webhook update harga
-- webhook publish playlist
-
----
-
-## 18. UI Halaman yang Perlu Dibuat
-
-## 18.1 Dashboard
-Komponen halaman:
-- summary card device online/offline
-- chart aktivitas device
-- list error terbaru
-- jadwal aktif hari ini
-- preview playlist yang sedang tayang
-
-## 18.2 Halaman Item
-Komponen halaman:
-- filter kategori
-- filter cabang
-- pencarian item
-- tabel item
-- tombol tambah / edit / hapus
-- upload gambar item
-- import excel opsional
-
-## 18.3 Halaman Harga
-Komponen halaman:
-- filter cabang
-- filter kategori
-- pencarian item
-- tabel harga
-- edit inline harga
-- histori perubahan harga
-
-## 18.4 Halaman Promo
-Komponen halaman:
-- daftar promo aktif / nonaktif
-- upload banner / video
-- pilih item terkait
-- periode promo
-- preview promo
-
-## 18.5 Halaman Template Layout
-Komponen halaman:
-- daftar template
-- preview template
-- form edit JSON / builder sederhana
-- orientasi layar
-- background
-- slot konten
-
-## 18.6 Halaman Scene
-Komponen halaman:
-- pilih template
-- atur sumber data
-- konfigurasi isi scene
-- preview scene
-
-## 18.7 Halaman Playlist
-Komponen halaman:
-- daftar scene di kiri
-- urutan playlist di kanan
-- durasi per scene
-- tombol publish
-- preview playlist
-
-## 18.8 Halaman Jadwal
-Komponen halaman:
-- kalender / timeline jadwal
-- target device / area / cabang
-- pilih playlist
-- periode aktif
-- prioritas
-
-## 18.9 Halaman Device Monitoring
-Komponen halaman:
-- tabel device
-- status online/offline
-- last seen
-- versi app
-- tombol refresh / restart
-- log device
-
----
-
-## 19. MVP yang Direkomendasikan
-
-Agar implementasi tidak terlalu berat, MVP sebaiknya fokus pada fitur inti berikut.
-
-### Modul MVP
-- login admin
-- tenant dan cabang
-- device dan pairing
-- kategori
-- item
-- harga
-- promo banner sederhana
-- media library
-- template statis sederhana
-- scene
-- playlist
-- jadwal tayang
-- player fullscreen
-- cache offline dasar
-- monitoring online/offline dasar
-
-### Yang Belum Wajib di MVP
-- drag and drop layout builder tingkat lanjut
-- analytics tayangan detail
-- remote screenshot device
-- integrasi POS kompleks
-- emergency broadcast
-
----
-
-## 20. Tahapan Implementasi yang Disarankan
-
-## Phase 1 — Pondasi Sistem
-Fokus:
-- setup backend
-- setup frontend admin
-- setup player app
-- autentikasi user dan device
-- desain database dasar
-
-### Output
-- login admin berjalan
-- CRUD master utama siap
-- device bisa pairing
-
-## Phase 2 — Price & Promo Engine
-Fokus:
-- item
-- harga
-- promo
-- media library
-- histori perubahan harga
-
-### Output
-- admin bisa mengelola item, harga, promo
-- player bisa menampilkan item dan harga
-
-## Phase 3 — Display Engine
-Fokus:
-- template layout
-- scene
-- playlist
-- jadwal tayang
-- preview display
-
-### Output
-- admin bisa mengatur konten tayang
-- player bisa memutar scene sesuai jadwal
-
-## Phase 4 — Device Monitoring & Offline Cache
-Fokus:
-- heartbeat
-- sync log
-- device log
-- cache offline
-- monitoring dashboard
-
-### Output
-- status device terpantau
-- player tetap tampil saat internet putus
-
-## Phase 5 — Advanced Feature
-Fokus:
-- integrasi POS / ERP
-- realtime update
-- remote command
-- analytics konten
-- template builder lanjutan
-
----
-
-## 21. Risiko dan Hal yang Perlu Diantisipasi
-
-### 21.1 Risiko Teknis
-- video terlalu besar membuat player lag
-- layout terlalu kompleks membuat rendering berat
-- jadwal konflik jika prioritas tidak dirancang dengan benar
-- device low-end bisa gagal memutar media berat
-
-### 21.2 Risiko Operasional
-- admin salah publish playlist ke device yang salah
-- harga tidak sinkron antar cabang
-- device mati tetapi masih dianggap online bila heartbeat tidak jelas
-
-### 21.3 Solusi Awal
-- validasi ukuran file media
-- gunakan prioritas pada jadwal
-- log semua perubahan penting
-- wajibkan preview sebelum publish
-- gunakan heartbeat timeout yang jelas
-
----
-
-## 22. Aturan Bisnis Dasar yang Disarankan
-
-1. satu device hanya menjalankan satu playlist aktif pada satu waktu
-2. jika ada lebih dari satu jadwal aktif, sistem memilih prioritas tertinggi
-3. jika tidak ada jadwal aktif, gunakan playlist default device
-4. harga aktif ditentukan dari periode harga yang masih berlaku
-5. promo aktif ditentukan dari tanggal, jam, dan hari aktif
-6. scene tidak boleh dipublish bila referensi template tidak valid
-7. playlist tidak boleh dipublish bila seluruh scene nonaktif
-8. device yang tidak heartbeat lebih dari ambang tertentu dianggap offline
-9. semua perubahan harga harus masuk histori log
-10. semua publish playlist harus masuk audit trail
-
----
-
-## 23. Persiapan Sebelum Coding
-
-Sebelum masuk implementasi, sebaiknya finalkan hal-hal berikut:
-
-### 23.1 Keputusan Produk
-- internal only atau dijual ke banyak client
-- single tenant atau multi-tenant
-- target device: browser, Android TV, Android Box, mini PC
-
-### 23.2 Keputusan UI/UX
-- orientasi default: landscape atau portrait
-- template awal apa saja
-- format daftar harga seperti apa
-- apakah perlu mode split video + harga
-
-### 23.3 Keputusan Data
-- harga input manual atau integrasi
-- item dari sistem lain atau input mandiri
-- promo berdiri sendiri atau selalu terkait item
-
-### 23.4 Keputusan Infrastruktur
-- media disimpan di local server atau object storage
-- player berkomunikasi via polling atau websocket
-- apakah perlu CDN untuk video / image
-
----
-
-## 24. Rekomendasi Implementasi Teknis Pertama
-
-Urutan implementasi paling aman:
-
-1. buat struktur database master utama
-2. buat auth admin dan auth device
-3. buat CRUD kategori, item, harga
-4. buat CRUD media dan promo
-5. buat template layout sederhana berbasis JSON
-6. buat scene dan playlist
-7. buat jadwal tayang
-8. buat player fullscreen web
-9. buat offline cache player
-10. buat monitoring device
-
----
-
-## 25. Penutup
-
-Dokumentasi ini dirancang sebagai dasar implementasi sistem display TV harga yang fleksibel untuk banyak jenis bisnis. Dengan struktur data yang generik dan modular, sistem bisa dimulai dari MVP sederhana lalu dikembangkan menjadi produk digital signage yang lebih besar dan bernilai jual tinggi.
-
-Langkah lanjutan yang paling disarankan setelah dokumen ini:
-1. finalkan struktur database / collection
-2. buat daftar endpoint API
-3. buat wireframe menu admin
-4. buat flow pairing dan flow player
-5. mulai implementasi Phase 1
+### 9.5 Jalankan frontend
 
+Terminal 2:
+
+```bash
+npm --workspace display-fe run dev
+```
+
+Frontend dev akan jalan di:
+
+```text
+http://localhost:8080
+```
+
+Login:
+
+```text
+username: 
+password:
+```
+
+Catatan:
+- Saat dev, frontend memakai proxy `/api` dan `/uploads` ke backend `localhost:7118`.
+- Jadi browser cukup buka `http://localhost:8080`.
+
+## 10. Step-by-Step Develop via Network/LAN
+
+Tujuan: aplikasi dibuka dari device lain di jaringan yang sama, misalnya laptop lain, HP, Android TV, atau TV browser.
+
+### 10.1 Cari IP komputer server
+
+Di Mac:
+
+```bash
+ipconfig getifaddr en0
+```
+
+Jika pakai LAN kabel bisa jadi:
+
+```bash
+ipconfig getifaddr en1
+```
+
+Contoh hasil:
+
+```text
+192.168.1.25
+```
+
+### 10.2 Jalankan backend
+
+```bash
+cd /Users/aandiyanti/Documents/RnD/PROJECT/display-harga
+npm --workspace server run dev
+```
+
+Backend akan listen di port:
+
+```text
+7118
+```
+
+Test dari komputer server:
+
+```bash
+curl http://localhost:7118/api/health
+```
+
+Test dari device lain:
+
+```text
+http://192.168.1.25:7118/api/health
+```
+
+### 10.3 Jalankan frontend dev network
+
+Vite sudah diset:
+
+```ts
+host: "::",
+port: 8080
+```
+
+Jalankan:
+
+```bash
+npm --workspace display-fe run dev
+```
+
+Buka dari device lain:
+
+```text
+http://192.168.1.25:8080
+```
+
+Buka display TV:
+
+```text
+http://192.168.1.25:8080/display
+```
+
+Catatan:
+- Di mode develop, API tetap aman karena Vite proxy meneruskan `/api` ke backend lokal komputer server.
+- Pastikan firewall Mac mengizinkan koneksi masuk ke Node/Vite.
+
+### 10.4 Jika device lain tidak bisa akses
+
+Cek:
+- Komputer dan device berada di jaringan Wi-Fi/LAN yang sama.
+- Backend jalan.
+- Frontend jalan.
+- IP benar.
+- Port `8080` tidak diblokir.
+- Port `7118` tidak diblokir.
+- VPN/firewall tidak memblokir koneksi lokal.
+
+## 11. Step-by-Step Build Production
+
+### 11.1 Build frontend
+
+```bash
+cd /Users/aandiyanti/Documents/RnD/PROJECT/display-harga
+npm --workspace display-fe run build
+```
+
+Output:
+
+```text
+display-fe/dist
+```
+
+### 11.2 Jalankan backend production
+
+```bash
+npm --workspace server run start
+```
+
+Backend akan jalan di:
+
+```text
+http://localhost:7118
+```
+
+### 11.3 Preview build frontend
+
+Untuk test build lokal:
+
+```bash
+npm --workspace display-fe run preview -- --host 0.0.0.0 --port 8080
+```
+
+Buka:
+
+```text
+http://localhost:8080
+```
+
+Atau dari device lain:
+
+```text
+http://IP_SERVER:8080
+```
+
+### 11.4 Penting untuk production/static build
+
+Vite proxy hanya berlaku saat `npm run dev`.
+
+Untuk build static, tentukan API base URL sebelum build jika frontend dan backend beda host/port.
+
+Buat file:
+
+```text
+display-fe/.env.production
+```
+
+Isi:
+
+```env
+VITE_API_BASE_URL="http://IP_SERVER:7118/api"
+```
+
+Contoh:
+
+```env
+VITE_API_BASE_URL="http://192.168.1.25:7118/api"
+```
+
+Lalu build ulang:
+
+```bash
+npm --workspace display-fe run build
+```
+
+Jika frontend dan backend disajikan dalam domain yang sama dengan reverse proxy `/api`, maka `VITE_API_BASE_URL` bisa dibiarkan default `/api`.
+
+## 12. Build untuk TV / Display
+
+Untuk TV browser dalam jaringan:
+
+1. Jalankan backend.
+2. Jalankan frontend dev atau preview.
+3. Buka URL display:
+
+```text
+http://IP_SERVER:8080/display
+```
+
+4. Fullscreen browser:
+   - Chrome: `View > Enter Full Screen`
+   - Keyboard Mac: `Control + Command + F`
+
+Rekomendasi:
+- Gunakan resolusi landscape.
+- Gunakan browser Chrome/Chromium.
+- Matikan sleep display pada device player.
+- Pastikan koneksi ke backend stabil.
+
+## 13. Verifikasi Setelah Perubahan
+
+Frontend:
+
+```bash
+npm --workspace display-fe run build
+```
+
+Backend syntax:
+
+```bash
+node --check server/server.js
+```
+
+Health API:
+
+```bash
+curl http://localhost:7118/api/health
+```
+
+Login API:
+
+```bash
+curl -X POST http://localhost:7118/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"","password":""}'
+```
+
+Display data:
+
+```bash
+curl http://localhost:7118/api/display
+```
+
+## 14. Troubleshooting
+
+### 14.1 Tidak bisa login
+
+Cek:
+- Backend sudah jalan di `7118`.
+- MongoDB bisa connect.
+- User ada di `tm_user`.
+- User `isActive` bukan `false`.
+- Password benar.
+
+Test langsung:
+
+```bash
+curl -X POST http://localhost:7118/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+```
+
+### 14.2 Frontend muncul tapi API gagal
+
+Jika develop:
+- Pastikan frontend dibuka dari `http://localhost:8080` atau `http://IP_SERVER:8080`.
+- Pastikan Vite dev masih jalan.
+- Pastikan backend `7118` jalan.
+
+Jika build/preview:
+- Pastikan `VITE_API_BASE_URL` sudah benar sebelum build.
+
+### 14.3 Display TV kosong
+
+Cek:
+- `tm_kategori` punya data.
+- Kategori `isActive` true.
+- `price` dan `buybackPrice` angka valid.
+- Endpoint `/api/display` mengembalikan `categories`.
+
+### 14.4 Video tidak muncul
+
+Cek:
+- Media `isActive` true.
+- Link YouTube valid.
+- Jika file lokal dipakai, pastikan file tersedia di `server/uploads`.
+- Endpoint `/uploads/...` bisa diakses dari browser.
+
+### 14.5 Device lain tidak bisa buka
+
+Cek:
+- IP server benar.
+- Device satu jaringan.
+- Port `8080` dan `7118` tidak diblokir firewall.
+- Jika memakai preview/build, `VITE_API_BASE_URL` memakai IP server, bukan `localhost`.
+
+## 15. Catatan Pengembangan
+
+Hal yang sudah disesuaikan:
+- Project berdiri sendiri dari Nagagold.
+- Database memakai collection baru `tm_kategori`, `tm_media`, `tm_user`, `tp_system`.
+- Display TV memakai design luxury motion dari Nagagold, tetapi data dari backend standalone.
+- Hero video dapat memakai YouTube dan auto-rotate.
+- Hero image fallback tetap tersedia.
+- Theme light/dark diterapkan ke admin dan Display TV.
+- Copyright dikunci ke Nagatech Sistem Integrator.
+- Login remember-me menyimpan username/password di perangkat.
+- Setelah login selalu masuk dashboard.
+- Upload lokal media di-hide dari UI, tetapi logic masih ada.
+
+Hal yang bisa dikembangkan nanti:
+- Build executable/kiosk untuk Android TV.
+- Reverse proxy Nginx agar frontend dan backend satu domain.
+- Pengaturan interval rotasi media dari UI.
+- Pengaturan tema Display TV dari database.
+- Multi-display profile.
+- Import kategori dari Excel.
+- Audit log perubahan harga.
