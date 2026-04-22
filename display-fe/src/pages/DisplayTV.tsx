@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock3, MessageCircle, Store } from "lucide-react";
+import { Clock3, Maximize2, MessageCircle, Store } from "lucide-react";
 import { getDisplay, type Category, type Media } from "@/lib/backend";
 import goldHeroImage from "@/assets/gold-tv-hero.png";
 import "./DisplayTVMonolith.css";
@@ -32,6 +32,7 @@ export default function DisplayTV() {
   const [pageIndex, setPageIndex] = useState(0);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [isHeroMediaReady, setIsHeroMediaReady] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [driveFallbackIds, setDriveFallbackIds] = useState<Set<string>>(() => new Set());
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -48,6 +49,23 @@ export default function DisplayTV() {
   useEffect(() => {
     document.body.classList.add("tv-monolith-active");
     return () => document.body.classList.remove("tv-monolith-active");
+  }, []);
+
+  useEffect(() => {
+    const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "f") {
+        requestFullscreen();
+      }
+    };
+
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", syncFullscreenState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -180,8 +198,22 @@ export default function DisplayTV() {
     setIsHeroMediaReady(false);
   };
 
+  const requestFullscreen = () => {
+    const target = document.documentElement;
+    if (!document.fullscreenElement && target.requestFullscreen) {
+      target.requestFullscreen().catch(() => undefined);
+    }
+  };
+
   return (
-    <div className="tv-monolith-screen">
+    <div className="tv-monolith-screen" onDoubleClick={requestFullscreen}>
+      {!isFullscreen ? (
+        <button type="button" className="tv-monolith-fullscreen-button" onClick={requestFullscreen}>
+          <Maximize2 className="h-4 w-4" />
+          Fullscreen TV
+        </button>
+      ) : null}
+
       <div className="tv-monolith-ambient tv-monolith-ambient-left" />
       <div className="tv-monolith-ambient tv-monolith-ambient-right" />
 

@@ -65,6 +65,32 @@ body.tv-monolith-active .page-without-sidebar .content {
   box-sizing: border-box;
 }
 
+.tv-monolith-fullscreen-button {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid rgba(242, 202, 80, 0.42);
+  border-radius: 999px;
+  background: rgba(12, 12, 12, 0.72);
+  color: var(--tv-gold);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.tv-monolith-fullscreen-button:hover {
+  transform: translateY(-1px);
+}
+
 /*
 html:not(.dark) .tv-monolith-screen {
   --tv-bg: #f7f3ea;
