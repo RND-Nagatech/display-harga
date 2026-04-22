@@ -36,7 +36,7 @@ export default function DisplayTV() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const settings = data?.system;
-  const tokoName = settings?.companyName?.trim() || "AURUM MONOLITH";
+  const tokoName = settings?.companyName?.trim() || "DISPLAY HARGA EMAS";
   const currentYear = new Date().getFullYear();
 
   const groups = useMemo(() => normalizeCategories(data?.categories || []), [data?.categories]);

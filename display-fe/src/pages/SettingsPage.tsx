@@ -97,11 +97,20 @@ export default function SettingsPage() {
                     type="number"
                     min={1}
                     max={1440}
-                    value={draft.displayRefreshMinutes}
-                    onChange={(e)=>setDraft({...draft, displayRefreshMinutes:Number(e.target.value) || 5})}
-                    placeholder="5"
+                    value={draft.displayRefreshMinutes === 0 ? "" : draft.displayRefreshMinutes}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // Allow empty string for immediate editing
+                      if (val === "") {
+                        setDraft({ ...draft, displayRefreshMinutes: 0 });
+                      } else {
+                        const num = Number(val);
+                        if (!isNaN(num)) setDraft({ ...draft, displayRefreshMinutes: num });
+                      }
+                    }}
+                    placeholder="30"
                   />
-                  <p className="mt-1 text-xs text-muted-foreground">Interval ambil ulang harga/konten. Default 5 menit.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Interval ambil ulang harga/konten. Default 30 menit.</p>
                 </div>
               </div>
               <div className="mt-6 flex justify-end gap-2">
@@ -127,7 +136,7 @@ export default function SettingsPage() {
             <p className="text-muted-foreground">{draft.operationalDays || "Hari operasional"}</p>
             <p className="text-foreground font-medium">{draft.operationalHours || "Jam operasional"}</p>
             <p className="text-muted-foreground">Refresh Display TV</p>
-            <p className="text-foreground font-medium">{draft.displayRefreshMinutes || 5} menit</p>
+            <p className="text-foreground font-medium">{draft.displayRefreshMinutes || 30} menit</p>
           </div>
         </Card>
       </div>
@@ -145,8 +154,8 @@ export default function SettingsPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
-                setDraft({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "", displayRefreshMinutes: 5 });
-                updateSystem({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "", displayRefreshMinutes: 5 })
+                setDraft({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "", displayRefreshMinutes: 30 });
+                updateSystem({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "", displayRefreshMinutes: 30 })
                   .then(() => {
                     qc.invalidateQueries({ queryKey: ["system"] });
                     qc.invalidateQueries({ queryKey: ["display"] });
