@@ -6,7 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/Dashboard";
 import Categories from "./pages/Categories";
+import ContentTypes from "./pages/ContentTypes";
 import MediaPage from "./pages/Media";
+import Promos from "./pages/Promos";
 import Users from "./pages/Users";
 import SettingsPage from "./pages/SettingsPage";
 import DisplayTV from "./pages/DisplayTV";
@@ -36,7 +38,9 @@ const App = () => (
             >
               <Route path="/" element={<Dashboard />} />
               <Route path="/categories" element={<Categories />} />
+              <Route path="/content-types" element={<ContentTypes />} />
               <Route path="/media" element={<MediaPage />} />
+              <Route path="/promos" element={<Promos />} />
               <Route path="/users" element={<Users />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>

@@ -8,7 +8,6 @@ const REFRESH_INTERVAL = 30_000;
 const CLOCK_INTERVAL = 1_000;
 const HIGHLIGHT_INTERVAL = 5_000;
 const PAGE_ROTATE_INTERVAL = 8_000;
-const HERO_MEDIA_ROTATE_INTERVAL = 15_000;
 const ROWS_PER_SIDE = 8;
 
 type PriceGroup = {
@@ -109,10 +108,10 @@ export default function DisplayTV() {
       return undefined;
     }
 
-    if (activeHeroMedia.type === "youtube") {
+    if (activeHeroMedia.durationSec && activeHeroMedia.durationSec > 0) {
       const timer = window.setTimeout(() => {
         setMediaIndex((current) => (current + 1) % heroMedia.length);
-      }, (activeHeroMedia.durationSec || HERO_MEDIA_ROTATE_INTERVAL / 1000) * 1000);
+      }, activeHeroMedia.durationSec * 1000);
 
       return () => window.clearTimeout(timer);
     }
@@ -144,6 +143,7 @@ export default function DisplayTV() {
   const headlineText = "MURNI • ELEGAN • BERNILAI TINGGI";
   const headlineScale = getHeadlineScale(headlineText);
   const youtubeEmbedUrl = buildYoutubeEmbedUrl(activeHeroMedia, heroMedia);
+  const heroSourceUrl = getHeroSourceUrl(activeHeroMedia);
 
   const goToNextMedia = () => {
     if (heroMedia.length <= 1) {
@@ -190,11 +190,30 @@ export default function DisplayTV() {
                   referrerPolicy="strict-origin-when-cross-origin"
                   onLoad={() => setIsHeroMediaReady(true)}
                 />
+              ) : activeHeroMedia?.type === "image" && heroSourceUrl ? (
+                <img
+                  key={`${activeHeroMedia.id}-${mediaIndex}`}
+                  src={heroSourceUrl}
+                  className="tv-monolith-hero-video"
+                  alt={activeHeroMedia.label || "Konten Display TV"}
+                  onLoad={() => setIsHeroMediaReady(true)}
+                  onError={goToNextMedia}
+                />
+              ) : activeHeroMedia?.type === "embed" && heroSourceUrl ? (
+                <iframe
+                  key={`${activeHeroMedia.id}-${mediaIndex}`}
+                  src={heroSourceUrl}
+                  className="tv-monolith-hero-video tv-monolith-hero-youtube"
+                  title={activeHeroMedia.label || "Konten Display TV"}
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  onLoad={() => setIsHeroMediaReady(true)}
+                />
               ) : activeHeroMedia ? (
                 <video
                   key={`${activeHeroMedia.id}-${mediaIndex}`}
                   ref={videoRef}
-                  src={activeHeroMedia.url}
+                  src={heroSourceUrl}
                   className="tv-monolith-hero-video"
                   autoPlay
                   muted
@@ -416,6 +435,14 @@ function buildYoutubeEmbedUrl(activeMedia: Media | null, allMedia: Media[]) {
     .join(",");
 
   return `https://www.youtube.com/embed/${activeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${playlist || activeId}&rel=0&modestbranding=1&playsinline=1`;
+}
+
+function getHeroSourceUrl(activeMedia: Media | null) {
+  if (!activeMedia) {
+    return "";
+  }
+
+  return activeMedia.displayUrl || activeMedia.embedUrl || activeMedia.url || activeMedia.sourceUrl || "";
 }
 
 function getYoutubeId(url: string) {

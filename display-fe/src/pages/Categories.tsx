@@ -120,22 +120,21 @@ export default function Categories() {
   return (
     <>
       <PageHeader
-        title="Master Kategori"
-        description="Kelola kode kategori, nama kategori, harga jual, dan harga buyback untuk Display TV."
-        action={
-          <Button onClick={onNew}>
-            <Plus className="mr-2 h-4 w-4" /> Tambah Kategori
-          </Button>
-        }
+        title="Master Harga Emas"
+        description="Kelola Harga Emas untuk Display TV."
       />
 
       <Card className="border-border/70 overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-border p-4">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari kode atau nama kategori..." className="pl-9" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari kode atau nama harga emas..." className="pl-9" />
           </div>
-          <p className="text-xs text-muted-foreground">{filtered.length} kategori</p>
+          <div className="flex items-center gap-3">
+            <Button onClick={onNew}>
+              <Plus className="mr-2 h-4 w-4" /> Tambah Data
+            </Button>
+          </div>
         </div>
 
         <Table>
@@ -202,7 +201,7 @@ export default function Categories() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{draft.id ? "Edit Kategori" : "Tambah Kategori"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{draft.id ? "Edit Data" : "Tambah Data"}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Kode Kategori</Label><Input value={draft.code} onChange={(e)=>setDraft({...draft, code:e.target.value.toUpperCase()})} placeholder="24K" /></div>

@@ -34,9 +34,13 @@ const tmUser = db.collection("tm_user");
 const tpSystem = db.collection("tp_system");
 const tmKategori = db.collection("tm_kategori");
 const tmMedia = db.collection("tm_media");
+const tmJenisKonten = db.collection("tm_jenis_konten");
+const tmKonten = db.collection("tm_konten");
+const tmPromo = db.collection("tm_promo");
 
 await tmUser.createIndex({ username: 1 }, { unique: true });
 await tmKategori.createIndex({ code: 1 }, { unique: true });
+await tmJenisKonten.createIndex({ jenis_konten: 1 }, { unique: true });
 
 await tpSystem.updateOne(
   { _id: "singleton" },
@@ -46,6 +50,8 @@ await tpSystem.updateOne(
       companyName: "",
       address: "",
       phone: "",
+      operationalDays: "",
+      operationalHours: "",
       updatedAt: new Date().toISOString()
     }
   },
@@ -82,6 +88,20 @@ app.get("/api/health", async (_req, res) => {
     data: {
       ok,
       mongoDb: MONGODB_DB
+    }
+  });
+});
+
+app.post("/api/uploads", requireAuth, upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "File wajib diisi" });
+  }
+
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  res.status(201).json({
+    data: {
+      fileName: req.file.filename,
+      url: `${baseUrl}/uploads/${req.file.filename}`
     }
   });
 });
@@ -183,6 +203,143 @@ app.put("/api/categories/:id", requireAuth, async (req, res) => {
 app.delete("/api/categories/:id", requireAuth, async (req, res) => {
   const id = String(req.params.id || "");
   await tmKategori.deleteOne(getIdFilter(id));
+  res.status(204).end();
+});
+
+// ---- Jenis Konten (tm_jenis_konten)
+app.get("/api/content-types", requireAuth, async (_req, res) => {
+  const items = await tmJenisKonten.find({}).sort({ jenis_konten: 1 }).toArray();
+  res.json({ data: items.map(sanitizeJenisKonten) });
+});
+
+app.post("/api/content-types", requireAuth, async (req, res) => {
+  const jenisKonten = String(req.body.jenis_konten || req.body.jenisKonten || "").trim();
+  if (!jenisKonten) {
+    return res.status(400).json({ message: "Jenis konten wajib diisi" });
+  }
+
+  const now = new Date().toISOString();
+  const doc = { jenis_konten: jenisKonten, createdAt: now, updatedAt: now };
+  try {
+    await tmJenisKonten.insertOne(doc);
+  } catch (_error) {
+    return res.status(409).json({ message: "Jenis konten sudah digunakan" });
+  }
+  res.status(201).json({ data: sanitizeJenisKonten(doc) });
+});
+
+app.put("/api/content-types/:id", requireAuth, async (req, res) => {
+  const id = String(req.params.id || "");
+  const jenisKonten = String(req.body.jenis_konten || req.body.jenisKonten || "").trim();
+  if (!jenisKonten) {
+    return res.status(400).json({ message: "Jenis konten wajib diisi" });
+  }
+
+  try {
+    const result = await tmJenisKonten.findOneAndUpdate(
+      getIdFilter(id),
+      { $set: { jenis_konten: jenisKonten, updatedAt: new Date().toISOString() } },
+      { returnDocument: "after" }
+    );
+    const updated = result?.value ?? result;
+    if (!updated) {
+      return res.status(404).json({ message: "Jenis konten tidak ditemukan" });
+    }
+    res.json({ data: sanitizeJenisKonten(updated) });
+  } catch (_error) {
+    return res.status(409).json({ message: "Jenis konten sudah digunakan" });
+  }
+});
+
+app.delete("/api/content-types/:id", requireAuth, async (req, res) => {
+  const id = String(req.params.id || "");
+  await tmJenisKonten.deleteOne(getIdFilter(id));
+  res.status(204).end();
+});
+
+// ---- Konten (tm_konten)
+app.get("/api/contents", requireAuth, async (_req, res) => {
+  const contents = await tmKonten.find({}).sort({ createdAt: -1 }).toArray();
+  res.json({ data: contents.map(sanitizeKonten) });
+});
+
+app.post("/api/contents", requireAuth, async (req, res) => {
+  const payload = normalizeKontenPayload(req.body);
+  if (!payload.judul_konten || !payload.jenis_konten || !payload.source_url) {
+    return res.status(400).json({ message: "Judul, jenis konten, dan source URL wajib diisi" });
+  }
+
+  const now = new Date().toISOString();
+  const doc = { ...payload, isActive: req.body.isActive !== false, createdAt: now, updatedAt: now };
+  await tmKonten.insertOne(doc);
+  res.status(201).json({ data: sanitizeKonten(doc) });
+});
+
+app.put("/api/contents/:id", requireAuth, async (req, res) => {
+  const id = String(req.params.id || "");
+  const payload = normalizeKontenPayload(req.body);
+  if (!payload.judul_konten || !payload.jenis_konten || !payload.source_url) {
+    return res.status(400).json({ message: "Judul, jenis konten, dan source URL wajib diisi" });
+  }
+
+  const result = await tmKonten.findOneAndUpdate(
+    getIdFilter(id),
+    { $set: { ...payload, isActive: req.body.isActive !== false, updatedAt: new Date().toISOString() } },
+    { returnDocument: "after" }
+  );
+  const updated = result?.value ?? result;
+  if (!updated) {
+    return res.status(404).json({ message: "Konten tidak ditemukan" });
+  }
+  res.json({ data: sanitizeKonten(updated) });
+});
+
+app.delete("/api/contents/:id", requireAuth, async (req, res) => {
+  const id = String(req.params.id || "");
+  await tmKonten.deleteOne(getIdFilter(id));
+  res.status(204).end();
+});
+
+// ---- Promo (tm_promo)
+app.get("/api/promos", requireAuth, async (_req, res) => {
+  const promos = await tmPromo.find({}).sort({ createdAt: -1 }).toArray();
+  res.json({ data: promos.map(sanitizePromo) });
+});
+
+app.post("/api/promos", requireAuth, async (req, res) => {
+  const payload = normalizePromoPayload(req.body);
+  if (!payload.judul_promo) {
+    return res.status(400).json({ message: "Judul promo wajib diisi" });
+  }
+
+  const now = new Date().toISOString();
+  const doc = { ...payload, isActive: req.body.isActive !== false, createdAt: now, updatedAt: now };
+  await tmPromo.insertOne(doc);
+  res.status(201).json({ data: sanitizePromo(doc) });
+});
+
+app.put("/api/promos/:id", requireAuth, async (req, res) => {
+  const id = String(req.params.id || "");
+  const payload = normalizePromoPayload(req.body);
+  if (!payload.judul_promo) {
+    return res.status(400).json({ message: "Judul promo wajib diisi" });
+  }
+
+  const result = await tmPromo.findOneAndUpdate(
+    getIdFilter(id),
+    { $set: { ...payload, isActive: req.body.isActive !== false, updatedAt: new Date().toISOString() } },
+    { returnDocument: "after" }
+  );
+  const updated = result?.value ?? result;
+  if (!updated) {
+    return res.status(404).json({ message: "Promo tidak ditemukan" });
+  }
+  res.json({ data: sanitizePromo(updated) });
+});
+
+app.delete("/api/promos/:id", requireAuth, async (req, res) => {
+  const id = String(req.params.id || "");
+  await tmPromo.deleteOne(getIdFilter(id));
   res.status(204).end();
 });
 
@@ -292,6 +449,8 @@ app.put("/api/system", requireAuth, requireAdmin, async (req, res) => {
     companyName: String(req.body.companyName || "").trim(),
     address: String(req.body.address || "").trim(),
     phone: String(req.body.phone || "").trim(),
+    operationalDays: String(req.body.operationalDays || "").trim(),
+    operationalHours: String(req.body.operationalHours || "").trim(),
     updatedAt: new Date().toISOString()
   };
   await tpSystem.updateOne({ _id: "singleton" }, { $set: payload }, { upsert: true });
@@ -375,19 +534,29 @@ app.delete("/api/users/:id", requireAuth, requireAdmin, async (req, res) => {
 
 // ---- Player display (public)
 app.get("/api/display", async (_req, res) => {
-  const [categories, media, system] = await Promise.all([
+  const [categories, contents, promos, legacyMedia, system] = await Promise.all([
     tmKategori
       .find({ isActive: { $ne: false } })
       .sort({ code: 1 })
       .toArray(),
+    tmKonten.find({ isActive: { $ne: false } }).sort({ createdAt: -1 }).toArray(),
+    tmPromo.find({ isActive: { $ne: false } }).sort({ createdAt: -1 }).toArray(),
     tmMedia.find({ isActive: { $ne: false } }).sort({ createdAt: -1 }).toArray(),
     tpSystem.findOne({ _id: "singleton" })
   ]);
 
+  const media = [
+    ...promos.map(promoToDisplayMedia),
+    ...contents.map(kontenToDisplayMedia),
+    ...legacyMedia.map(sanitizeMedia)
+  ];
+
   res.json({
     data: {
       categories: categories.map(sanitizeKategori),
-      media: media.map(sanitizeMedia),
+      contents: contents.map(sanitizeKonten),
+      promos: promos.map(sanitizePromo),
+      media,
       system: sanitizeSystem(system)
     }
   });
@@ -416,6 +585,8 @@ function sanitizeSystem(system) {
     companyName: system.companyName || "",
     address: system.address || "",
     phone: system.phone || "",
+    operationalDays: system.operationalDays || "",
+    operationalHours: system.operationalHours || "",
     updatedAt: system.updatedAt
   };
 }
@@ -431,7 +602,52 @@ function sanitizeKategori(item) {
   };
 }
 
+function sanitizeJenisKonten(item) {
+  return {
+    id: String(item._id),
+    jenis_konten: item.jenis_konten || "",
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt
+  };
+}
+
+function sanitizeKonten(item) {
+  const sourceUrl = item.source_url || "";
+  return {
+    id: String(item._id),
+    judul_konten: item.judul_konten || "",
+    jenis_konten: item.jenis_konten || "",
+    source_url: sourceUrl,
+    deskripsi: item.deskripsi || "",
+    durasi_tampil: Number.isFinite(Number(item.durasi_tampil)) && Number(item.durasi_tampil) > 0
+      ? Number(item.durasi_tampil)
+      : null,
+    source_type: detectSourceType(sourceUrl),
+    display_url: normalizeDisplayUrl(sourceUrl),
+    isActive: item.isActive !== false,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt
+  };
+}
+
+function sanitizePromo(item) {
+  const sourceUrl = item.media_opsional || item.banner_opsional || "";
+  return {
+    id: String(item._id),
+    judul_promo: item.judul_promo || "",
+    deskripsi_promo: item.deskripsi_promo || "",
+    banner_opsional: item.banner_opsional || "",
+    media_opsional: item.media_opsional || "",
+    source_type: detectSourceType(sourceUrl),
+    display_url: normalizeDisplayUrl(sourceUrl),
+    isActive: item.isActive !== false,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt
+  };
+}
+
 function sanitizeMedia(item) {
+  const sourceUrl = item.sourceUrl || item.url || "";
   return {
     id: String(item._id),
     label: item.label,
@@ -441,10 +657,83 @@ function sanitizeMedia(item) {
     sourceUrl: item.sourceUrl,
     embedUrl: item.embedUrl,
     durationSec: item.durationSec,
+    sourceType: item.sourceType || detectSourceType(sourceUrl),
+    displayUrl: item.displayUrl || item.embedUrl || normalizeDisplayUrl(sourceUrl),
+    description: item.description || "",
+    origin: item.origin || "media",
     isActive: item.isActive !== false,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt
   };
+}
+
+function kontenToDisplayMedia(item) {
+  const sanitized = sanitizeKonten(item);
+  return {
+    id: `content-${sanitized.id}`,
+    label: sanitized.judul_konten,
+    type: sanitized.source_type,
+    sourceType: sanitized.source_type,
+    sourceUrl: sanitized.source_url,
+    url: sanitized.display_url,
+    displayUrl: sanitized.display_url,
+    embedUrl: sanitized.source_type === "youtube" ? toYoutubeEmbedUrl(sanitized.source_url) : sanitized.display_url,
+    durationSec: getDisplayDurationSec(sanitized.source_type, sanitized.durasi_tampil),
+    description: sanitized.deskripsi,
+    origin: "content",
+    isActive: sanitized.isActive,
+    createdAt: sanitized.createdAt,
+    updatedAt: sanitized.updatedAt
+  };
+}
+
+function promoToDisplayMedia(item) {
+  const sanitized = sanitizePromo(item);
+  return {
+    id: `promo-${sanitized.id}`,
+    label: sanitized.judul_promo,
+    type: sanitized.source_type || "promo",
+    sourceType: sanitized.source_type,
+    sourceUrl: sanitized.media_opsional || sanitized.banner_opsional,
+    url: sanitized.display_url,
+    displayUrl: sanitized.display_url,
+    embedUrl: sanitized.source_type === "youtube" ? toYoutubeEmbedUrl(sanitized.media_opsional || sanitized.banner_opsional) : sanitized.display_url,
+    durationSec: getDisplayDurationSec(sanitized.source_type, null),
+    description: sanitized.deskripsi_promo,
+    origin: "promo",
+    isActive: sanitized.isActive,
+    createdAt: sanitized.createdAt,
+    updatedAt: sanitized.updatedAt
+  };
+}
+
+function normalizeKontenPayload(body) {
+  return {
+    judul_konten: String(body.judul_konten || body.judulKonten || "").trim(),
+    jenis_konten: String(body.jenis_konten || body.jenisKonten || "").trim(),
+    source_url: String(body.source_url || body.sourceUrl || "").trim(),
+    deskripsi: String(body.deskripsi || "").trim(),
+    durasi_tampil: Number.isFinite(Number(body.durasi_tampil || body.durasiTampil)) && Number(body.durasi_tampil || body.durasiTampil) > 0
+      ? Number(body.durasi_tampil || body.durasiTampil)
+      : null
+  };
+}
+
+function normalizePromoPayload(body) {
+  return {
+    judul_promo: String(body.judul_promo || body.judulPromo || "").trim(),
+    deskripsi_promo: String(body.deskripsi_promo || body.deskripsiPromo || "").trim(),
+    banner_opsional: String(body.banner_opsional || body.bannerOpsional || "").trim(),
+    media_opsional: String(body.media_opsional || body.mediaOpsional || "").trim()
+  };
+}
+
+function getDisplayDurationSec(sourceType, durationSec) {
+  if (Number.isFinite(Number(durationSec)) && Number(durationSec) > 0) {
+    return Number(durationSec);
+  }
+
+  return sourceType === "image" || sourceType === "embed" || sourceType === "youtube" ? 10 : null;
 }
 
 function normalizeUserLevel(level) {
@@ -481,6 +770,45 @@ function toYoutubeEmbedUrl(url) {
   return id
     ? `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&rel=0&playsinline=1`
     : null;
+}
+
+function detectSourceType(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "url";
+  if (youtubeIdFromUrl(raw)) return "youtube";
+
+  const cleanUrl = raw.split("?")[0].toLowerCase();
+  if (/\.(mp4|webm|ogg|mov|m4v)$/i.test(cleanUrl)) return "video";
+  if (/\.(png|jpe?g|gif|webp|avif|svg)$/i.test(cleanUrl)) return "image";
+  if (/drive\.google\.com|docs\.google\.com/i.test(raw)) return "embed";
+  if (/instagram\.com|firebase|firebasestorage\.googleapis\.com/i.test(raw)) return "embed";
+  return "embed";
+}
+
+function normalizeDisplayUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+  const youtubeEmbed = toYoutubeEmbedUrl(raw);
+  if (youtubeEmbed) return youtubeEmbed;
+
+  const driveId = googleDriveIdFromUrl(raw);
+  if (driveId) {
+    return `https://drive.google.com/file/d/${driveId}/preview`;
+  }
+
+  return raw;
+}
+
+function googleDriveIdFromUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes("drive.google.com")) return "";
+    const fileMatch = parsed.pathname.match(/\/file\/d\/([^/]+)/);
+    if (fileMatch?.[1]) return fileMatch[1];
+    return parsed.searchParams.get("id") || "";
+  } catch (_error) {
+    return "";
+  }
 }
 
 async function ensureDefaultAdmin() {

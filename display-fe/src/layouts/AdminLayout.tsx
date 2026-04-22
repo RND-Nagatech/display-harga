@@ -4,6 +4,8 @@ import {
   LayoutDashboard,
   Package,
   Film,
+  Tags,
+  Megaphone,
   Tv,
   Users,
   Settings as SettingsIcon,
@@ -21,8 +23,10 @@ import { Button } from "@/components/ui/button";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/categories", label: "Master Kategori", icon: Package },
-  { to: "/media", label: "Master Media", icon: Film },
+  { to: "/categories", label: "Master Harga Emas", icon: Package },
+  { to: "/content-types", label: "Master Jenis Konten", icon: Tags },
+  { to: "/media", label: "Master Konten", icon: Film },
+  { to: "/promos", label: "Master Promo", icon: Megaphone },
   { to: "/display", label: "Display TV", icon: Tv, external: true },
   { to: "/users", label: "Manage User", icon: Users },
   { to: "/settings", label: "Pengaturan", icon: SettingsIcon },

@@ -1,8 +1,8 @@
 html:not(.dark) .tv-monolith-hero-copy p {
-  color: #111;
+  color: #ffffff;
   font-weight: 800;
-  text-shadow: 0 1px 4px #fff, 0 0 2px #fff;
-  background: linear-gradient(90deg, rgba(242,202,80,0.18) 0%, rgba(255,255,255,0.82) 100%);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.48), 0 0 2px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(90deg, rgba(22,18,14,0.56) 0%, rgba(22,18,14,0.26) 100%);
   border-radius: 12px;
   padding: 4px 18px;
   display: inline-block;
@@ -10,9 +10,9 @@ html:not(.dark) .tv-monolith-hero-copy p {
   box-shadow: 0 2px 8px 0 rgba(198,146,34,0.08);
 }
 html:not(.dark) .tv-monolith-hero-copy p {
-  color: #111;
+  color: #ffffff;
   font-weight: 800;
-  text-shadow: 0 1px 4px #fff, 0 0 2px #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.48), 0 0 2px rgba(0, 0, 0, 0.5);
 }
 body.tv-monolith-active {
   margin: 0;
@@ -130,7 +130,6 @@ html:not(.dark) .tv-monolith-hero-copy h1 {
   -webkit-text-stroke: 1px rgba(109, 79, 20, 0.12);
 }
 
-html:not(.dark) .tv-monolith-hero-copy p,
 html:not(.dark) .tv-monolith-buyback-note {
   color: var(--tv-text-soft);
 }

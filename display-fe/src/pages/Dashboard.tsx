@@ -1,30 +1,31 @@
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, Film, Users, Tv, ArrowUpRight, TrendingUp } from "lucide-react";
+import { Package, Film, Users, Tv, ArrowUpRight, TrendingUp, Megaphone } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { useQuery } from "@tanstack/react-query";
-import { listCategories, listMedia, listUsers } from "@/lib/backend";
+import { listCategories, listContents, listPromos, listUsers } from "@/lib/backend";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function Dashboard() {
   const { isAdmin } = useAuth();
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: listCategories });
-  const { data: media = [] } = useQuery({ queryKey: ["media"], queryFn: listMedia });
+  const { data: contents = [] } = useQuery({ queryKey: ["contents"], queryFn: listContents });
+  const { data: promos = [] } = useQuery({ queryKey: ["promos"], queryFn: listPromos });
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: listUsers, enabled: isAdmin });
 
   const stats = [
-    { label: "Total Kategori", value: categories.length, icon: Package, hint: `${categories.filter(i=>i.isActive).length} aktif`, background: "linear-gradient(135deg, rgba(251, 191, 36, 0.16) 0%, rgba(245, 158, 11, 0.06) 58%, rgba(255, 255, 255, 0.02) 100%)", glow: "bg-amber-500/12", iconStyle: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
-    { label: "Total Media", value: media.length, icon: Film, hint: `${media.filter(m=>m.isActive).length} di playlist`, background: "linear-gradient(135deg, rgba(56, 189, 248, 0.14) 0%, rgba(14, 165, 233, 0.05) 58%, rgba(255, 255, 255, 0.02) 100%)", glow: "bg-sky-500/12", iconStyle: "bg-sky-500/15 text-sky-600 dark:text-sky-300" },
-    { label: "Pengguna", value: isAdmin ? users.length : "-", icon: Users, hint: isAdmin ? `${users.filter(u=>u.isActive).length} aktif` : "admin only", background: "linear-gradient(135deg, rgba(168, 85, 247, 0.14) 0%, rgba(139, 92, 246, 0.05) 58%, rgba(255, 255, 255, 0.02) 100%)", glow: "bg-violet-500/12", iconStyle: "bg-violet-500/15 text-violet-600 dark:text-violet-300" },
-    { label: "Rata-rata Harga", value: categories.length ? formatIDR(Math.round(categories.reduce((a,b)=>a+Number(b.price||0),0)/categories.length)) : "-", icon: TrendingUp, hint: "semua kategori", background: "linear-gradient(135deg, rgba(52, 211, 153, 0.14) 0%, rgba(16, 185, 129, 0.05) 58%, rgba(255, 255, 255, 0.02) 100%)", glow: "bg-emerald-500/12", iconStyle: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
+    { label: "Total Harga Emas", value: categories.length, icon: Package, hint: `${categories.filter(i=>i.isActive).length} aktif`, background: "linear-gradient(135deg, rgba(251, 191, 36, 0.16) 0%, rgba(245, 158, 11, 0.06) 58%, rgba(255, 255, 255, 0.02) 100%)", glow: "bg-amber-500/12", iconStyle: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
+    { label: "Total Konten", value: contents.length, icon: Film, hint: `${contents.filter(m=>m.isActive).length} di playlist`, background: "linear-gradient(135deg, rgba(56, 189, 248, 0.14) 0%, rgba(14, 165, 233, 0.05) 58%, rgba(255, 255, 255, 0.02) 100%)", glow: "bg-sky-500/12", iconStyle: "bg-sky-500/15 text-sky-600 dark:text-sky-300" },
+    { label: "Total Promo", value: promos.length, icon: Megaphone, hint: `${promos.filter(m=>m.isActive).length} aktif`, background: "linear-gradient(135deg, rgba(168, 85, 247, 0.14) 0%, rgba(139, 92, 246, 0.05) 58%, rgba(255, 255, 255, 0.02) 100%)", glow: "bg-violet-500/12", iconStyle: "bg-violet-500/15 text-violet-600 dark:text-violet-300" },
+    { label: "Rata-rata Harga", value: categories.length ? formatIDR(Math.round(categories.reduce((a,b)=>a+Number(b.price||0),0)/categories.length)) : "-", icon: TrendingUp, hint: "semua harga emas", background: "linear-gradient(135deg, rgba(52, 211, 153, 0.14) 0%, rgba(16, 185, 129, 0.05) 58%, rgba(255, 255, 255, 0.02) 100%)", glow: "bg-emerald-500/12", iconStyle: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
   ];
 
   return (
     <>
       <PageHeader
         title="Dashboard"
-        description="Kelola kategori, media, user, dan pengaturan display harga emas."
+        description="Kelola harga emas, konten, promo, user, dan pengaturan display."
         action={
           <Button asChild>
             <a href="/display" target="_blank" rel="noreferrer">
@@ -82,21 +83,21 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-6 border-border/70">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Playlist Aktif</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-4">Playlist Konten Aktif</h2>
           <div className="space-y-3">
-            {media.filter(m=>m.isActive).map((m) => (
+            {contents.filter(m=>m.isActive).map((m) => (
               <div key={m.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary">
                   <Film className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{m.label}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{m.type}</p>
+                  <p className="text-sm font-medium truncate">{m.judul_konten}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{m.jenis_konten}</p>
                 </div>
               </div>
             ))}
-            {media.filter(m=>m.isActive).length === 0 && (
-              <p className="text-xs text-muted-foreground">Belum ada media aktif.</p>
+            {contents.filter(m=>m.isActive).length === 0 && (
+              <p className="text-xs text-muted-foreground">Belum ada konten aktif.</p>
             )}
           </div>
         </Card>

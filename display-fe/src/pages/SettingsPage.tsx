@@ -34,6 +34,8 @@ export default function SettingsPage() {
     companyName: "",
     address: "",
     phone: "",
+    operationalDays: "",
+    operationalHours: "",
   });
 
   useEffect(() => {
@@ -65,20 +67,28 @@ export default function SettingsPage() {
             <>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <Label>Kode Perusahaan</Label>
+                  <Label>Kode Toko</Label>
                   <Input value={draft.companyCode} onChange={(e)=>setDraft({...draft, companyCode:e.target.value})} placeholder="CMP-001" />
                 </div>
                 <div>
-                  <Label>No. Telepon</Label>
-                  <Input value={draft.phone} onChange={(e)=>setDraft({...draft, phone:e.target.value})} placeholder="+62 …" />
-                </div>
-                <div className="sm:col-span-2">
-                  <Label>Nama Perusahaan</Label>
+                  <Label>Nama Toko</Label>
                   <Input value={draft.companyName} onChange={(e)=>setDraft({...draft, companyName:e.target.value})} />
                 </div>
                 <div className="sm:col-span-2">
                   <Label>Alamat</Label>
                   <Textarea rows={3} value={draft.address} onChange={(e)=>setDraft({...draft, address:e.target.value})} />
+                </div>
+                <div>
+                  <Label>No. Telepon</Label>
+                  <Input value={draft.phone} onChange={(e)=>setDraft({...draft, phone:e.target.value})} placeholder="+62 …" />
+                </div>
+                <div>
+                  <Label>Hari Buka</Label>
+                  <Input value={draft.operationalDays} onChange={(e)=>setDraft({...draft, operationalDays:e.target.value})} placeholder="Senin - Sabtu" />
+                </div>
+                <div>
+                  <Label>Jam Buka</Label>
+                  <Input value={draft.operationalHours} onChange={(e)=>setDraft({...draft, operationalHours:e.target.value})} placeholder="09.00 - 21.00" />
                 </div>
               </div>
               <div className="mt-6 flex justify-end gap-2">
@@ -101,6 +111,8 @@ export default function SettingsPage() {
           <div className="mt-4 space-y-2 text-sm">
             <p className="text-muted-foreground">{draft.address || "Alamat perusahaan"}</p>
             <p className="text-foreground font-medium">{draft.phone || "-"}</p>
+            <p className="text-muted-foreground">{draft.operationalDays || "Hari operasional"}</p>
+            <p className="text-foreground font-medium">{draft.operationalHours || "Jam operasional"}</p>
           </div>
         </Card>
       </div>
@@ -118,8 +130,8 @@ export default function SettingsPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
-                setDraft({ companyCode: "", companyName: "", address: "", phone: "" });
-                updateSystem({ companyCode: "", companyName: "", address: "", phone: "" })
+                setDraft({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "" });
+                updateSystem({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "" })
                   .then(() => {
                     qc.invalidateQueries({ queryKey: ["system"] });
                     qc.invalidateQueries({ queryKey: ["display"] });

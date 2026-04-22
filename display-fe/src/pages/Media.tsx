@@ -1,17 +1,28 @@
-import { useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { FileVideo, Pencil, PlayCircle, Plus, Search, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Upload, Youtube, FileVideo, PlayCircle } from "lucide-react";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,108 +33,124 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createYoutubeMedia, deleteMedia, listMedia, updateMedia, uploadMedia, type Media } from "@/lib/backend";
-import { youtubeIdFromUrl } from "@/lib/youtube";
 import {
-  Dialog as PreviewDialog,
-  DialogContent as PreviewDialogContent,
-  DialogHeader as PreviewDialogHeader,
-  DialogTitle as PreviewDialogTitle,
-} from "@/components/ui/dialog";
+  createContent,
+  deleteContent,
+  listContentTypes,
+  listContents,
+  updateContent,
+  type Content,
+} from "@/lib/backend";
 
-type MediaDraft = {
+type ContentDraft = {
   id: string;
-  title: string;
-  type: "local" | "youtube";
-  src: string;
-  durationSec: number;
-  active: boolean;
-  file?: File | null;
+  judul_konten: string;
+  jenis_konten: string;
+  source_url: string;
+  deskripsi: string;
+  durasi_tampil: string;
+  isActive: boolean;
 };
 
-const empty: MediaDraft = { id: "", title: "", type: "youtube", src: "", durationSec: 30, active: true, file: null };
+const emptyDraft: ContentDraft = {
+  id: "",
+  judul_konten: "",
+  jenis_konten: "",
+  source_url: "",
+  deskripsi: "",
+  durasi_tampil: "",
+  isActive: true,
+};
 
 export default function MediaPage() {
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<MediaDraft>(empty);
-  const [confirm, setConfirm] = useState<Media | null>(null);
-  const [preview, setPreview] = useState<Media | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<ContentDraft>(emptyDraft);
+  const [confirm, setConfirm] = useState<Content | null>(null);
+  const [preview, setPreview] = useState<Content | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
 
-  const { data: media = [], isLoading } = useQuery({
-    queryKey: ["media"],
-    queryFn: listMedia,
+  const { data: contents = [], isLoading } = useQuery({
+    queryKey: ["contents"],
+    queryFn: listContents,
   });
+  const { data: contentTypes = [] } = useQuery({
+    queryKey: ["content-types"],
+    queryFn: listContentTypes,
+  });
+  const filteredContents = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return contents.filter((content) => {
+      const matchesType = typeFilter === "all" || content.jenis_konten === typeFilter;
+      const searchable = [
+        content.judul_konten,
+        content.jenis_konten,
+        content.source_url,
+        content.deskripsi,
+      ].join(" ").toLowerCase();
+      return matchesType && (!query || searchable.includes(query));
+    });
+  }, [contents, search, typeFilter]);
 
-  const openNew = (type: MediaDraft["type"]) => { setDraft({ ...empty, id: "", type }); setOpen(true); };
-  const openEdit = (m: Media) => {
+  const openNew = () => {
+    setDraft({ ...emptyDraft, jenis_konten: contentTypes[0]?.jenis_konten || "" });
+    setOpen(true);
+  };
+
+  const openEdit = (content: Content) => {
     setDraft({
-      id: m.id,
-      title: m.label,
-      type: m.type === "youtube" ? "youtube" : "local",
-      src: m.type === "youtube" ? (m.sourceUrl || "") : (m.url || ""),
-      durationSec: Number(m.durationSec || 30),
-      active: m.isActive !== false,
-      file: null,
+      id: content.id,
+      judul_konten: content.judul_konten,
+      jenis_konten: content.jenis_konten,
+      source_url: content.source_url,
+      deskripsi: content.deskripsi || "",
+      durasi_tampil: content.durasi_tampil ? String(content.durasi_tampil) : "",
+      isActive: content.isActive !== false,
     });
     setOpen(true);
   };
 
-  const handleFile = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setDraft((d) => ({ ...d, src: url, title: d.title || file.name.replace(/\.[^.]+$/, ""), file }));
-    toast.success("File dipilih");
-  };
-
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!draft.title) throw new Error("Judul wajib diisi");
-      if (!draft.src && !draft.file) throw new Error("Sumber media kosong");
-      if (draft.type === "youtube") {
-        if (!youtubeIdFromUrl(draft.src)) throw new Error("Link YouTube tidak valid");
-        if (draft.id) {
-          return updateMedia(draft.id, {
-            label: draft.title,
-            isActive: draft.active,
-            durationSec: draft.durationSec,
-            sourceUrl: draft.src,
-          } as any);
-        }
-        return createYoutubeMedia(draft.title, draft.src, draft.durationSec, draft.active);
-      }
+      if (!draft.judul_konten.trim()) throw new Error("Judul konten wajib diisi");
+      if (!draft.jenis_konten.trim()) throw new Error("Jenis konten wajib dipilih");
+      if (!draft.source_url.trim()) throw new Error("Source URL wajib diisi");
 
-      // local
-      if (draft.id) {
-        return updateMedia(draft.id, { label: draft.title, isActive: draft.active } as any);
-      }
-      if (!draft.file) throw new Error("File wajib dipilih");
-      return uploadMedia(draft.title, draft.file, draft.active);
+      const payload = {
+        judul_konten: draft.judul_konten.trim(),
+        jenis_konten: draft.jenis_konten,
+        source_url: draft.source_url.trim(),
+        deskripsi: draft.deskripsi.trim(),
+        durasi_tampil: draft.durasi_tampil ? Math.max(1, Number(draft.durasi_tampil)) : null,
+        isActive: draft.isActive,
+      };
+
+      return draft.id ? updateContent(draft.id, payload) : createContent(payload);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["media"] });
+      qc.invalidateQueries({ queryKey: ["contents"] });
       qc.invalidateQueries({ queryKey: ["display"] });
       setOpen(false);
-      toast.success("Media disimpan");
+      toast.success("Konten disimpan");
     },
-    onError: (e: any) => toast.error(e?.message || "Gagal menyimpan media"),
+    onError: (error: any) => toast.error(error?.message || "Gagal menyimpan konten"),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => deleteMedia(id),
+    mutationFn: async (id: string) => deleteContent(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["media"] });
+      qc.invalidateQueries({ queryKey: ["contents"] });
       qc.invalidateQueries({ queryKey: ["display"] });
-      toast.success("Media dihapus");
+      toast.success("Konten dihapus");
     },
-    onError: (e: any) => toast.error(e?.message || "Gagal menghapus media"),
+    onError: (error: any) => toast.error(error?.message || "Gagal menghapus konten"),
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async (m: Media & { next: boolean }) => updateMedia(m.id, { isActive: m.next } as any),
+    mutationFn: async (content: Content & { next: boolean }) => updateContent(content.id, { ...content, isActive: content.next }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["media"] });
+      qc.invalidateQueries({ queryKey: ["contents"] });
       qc.invalidateQueries({ queryKey: ["display"] });
     },
   });
@@ -131,139 +158,191 @@ export default function MediaPage() {
   return (
     <>
       <PageHeader
-        title="Master Media"
-        description="Tambahkan link YouTube. Akan diputar bergantian di Display TV."
-        action={
-          <div className="flex gap-2">
-            {/* Upload lokal disembunyikan sementara. Logic uploadMedia/handleFile tetap dipertahankan agar mudah diaktifkan lagi.
-            <Button variant="outline" onClick={() => openNew("local")}><Upload className="mr-2 h-4 w-4" /> Upload Lokal</Button>
-            */}
-            <Button onClick={() => openNew("youtube")}><Youtube className="mr-2 h-4 w-4" /> YouTube</Button>
-          </div>
-        }
+        title="Master Konten"
+        description="Kelola konten yang ingin diputar di Display TV."
       />
 
+      <Card className="mb-4 border-border/70 p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
+          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-end">
+            <div className="w-full md:w-[220px]">
+              <Label className="mb-1.5 block text-xs">Jenis Konten</Label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter jenis konten" />
+                </SelectTrigger>
+                <SelectContent className="z-[400] border border-border bg-popover text-popover-foreground shadow-2xl">
+                  <SelectItem value="all">SEMUA</SelectItem>
+                  {contentTypes.map((item) => (
+                    <SelectItem key={item.id} value={item.jenis_konten}>
+                      {item.jenis_konten}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-full md:max-w-xs">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Cari judul, deskripsi, URL..."
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="mt-2 md:mt-0 md:ml-auto">
+            <Button onClick={openNew}>
+              <Plus className="mr-2 h-4 w-4" /> Tambah Data
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {media.map((m) => {
-          const ytId = m.type === "youtube" ? youtubeIdFromUrl(m.sourceUrl || "") : null;
-          const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null;
-          return (
-            <Card key={m.id} className="overflow-hidden border-border/70 group">
-              <button
-                type="button"
-                className="aspect-video bg-secondary relative w-full text-left"
-                onClick={() => setPreview(m)}
-              >
-                {thumb ? (
-                  <img src={thumb} alt={m.label} className="h-full w-full object-cover" />
-                ) : m.type === "file" && m.url ? (
-                  <video src={m.url} className="h-full w-full object-cover" muted />
-                ) : (
-                  <div className="flex h-full items-center justify-center"><FileVideo className="h-10 w-10 text-muted-foreground" /></div>
-                )}
-                <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/30 transition-colors flex items-center justify-center">
-                  <PlayCircle className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+        {filteredContents.map((content) => (
+          <Card key={content.id} className="overflow-hidden border-border/70">
+            <button type="button" className="group block aspect-video w-full overflow-hidden bg-secondary/70 text-left" onClick={() => setPreview(content)}>
+              <div className="relative h-full w-full">
+                <ContentPoster content={content} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <PlayCircle className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 text-white/85 opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                <div className="flex items-center justify-between gap-3">
+                    <span className="rounded-full border border-amber-300/40 bg-amber-400/25 px-3 py-1 text-xs font-semibold text-amber-50 shadow-[0_0_22px_rgba(251,191,36,0.28)] backdrop-blur">
+                    {content.jenis_konten}
+                  </span>
+                    <span className="text-xs text-white/75">Klik preview</span>
                 </div>
-                <Badge className="absolute top-3 left-3 bg-background/90 text-foreground border-0 backdrop-blur">
-                  {m.type === "youtube" ? "YouTube" : "Lokal"}
-                </Badge>
-              </button>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{m.label}</p>
-                    <p className="text-xs text-muted-foreground truncate">{m.type === "youtube" ? m.sourceUrl : m.url}</p>
-                  </div>
-                  {m.isActive
-                    ? <Badge className="bg-success/10 text-success border-0">Aktif</Badge>
-                    : <Badge variant="secondary">Off</Badge>}
-                </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <Switch checked={m.isActive} onCheckedChange={(v)=>toggleMutation.mutate({ ...m, next: v } as any)} />
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={()=>openEdit(m)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={()=>setConfirm(m)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
+                  <p className="mt-4 line-clamp-2 text-lg font-semibold text-white">{content.judul_konten}</p>
+                  <p className="mt-1 line-clamp-1 text-xs text-white/70">{content.source_url}</p>
                 </div>
               </div>
-            </Card>
-          );
-        })}
-
-        {!isLoading && media.length === 0 && (
-          <Card className="col-span-full p-12 text-center border-dashed">
-            <FileVideo className="h-10 w-10 text-muted-foreground mx-auto" />
-            <p className="mt-3 text-sm font-medium">Belum ada media</p>
-            <p className="text-xs text-muted-foreground">Tambahkan video lokal atau link YouTube untuk mulai.</p>
+            </button>
+            <div className="p-4">
+              <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
+                {content.deskripsi || "Tanpa deskripsi"}
+              </p>
+              <div className="mt-4 flex items-center justify-between">
+                <Switch
+                  checked={content.isActive}
+                  onCheckedChange={(value) => toggleMutation.mutate({ ...content, next: value })}
+                />
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(content)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setConfirm(content)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </Card>
-        )}
+        ))}
+
+        {!isLoading && filteredContents.length === 0 ? (
+          <Card className="col-span-full border-dashed p-12 text-center">
+            <FileVideo className="mx-auto h-10 w-10 text-muted-foreground" />
+            <p className="mt-3 text-sm font-medium">{contents.length ? "Konten tidak ditemukan" : "Belum ada konten"}</p>
+            <p className="text-xs text-muted-foreground">Tambahkan link atau video URL, atau ubah filter pencarian.</p>
+          </Card>
+        ) : null}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{draft.id ? "Edit Media" : "Tambah Media"}</DialogTitle></DialogHeader>
-          <Tabs value={draft.type} onValueChange={(v)=>setDraft({...draft, type: v as MediaDraft["type"], src: "", file: null })}>
-            <TabsList className="grid grid-cols-1 w-full">
-              {/* Upload lokal disembunyikan sementara. Buka kembali blok ini jika fitur file lokal ingin dipakai lagi.
-              <TabsTrigger value="local"><Upload className="mr-2 h-4 w-4" />File Lokal</TabsTrigger>
-              */}
-              <TabsTrigger value="youtube"><Youtube className="mr-2 h-4 w-4" />YouTube</TabsTrigger>
-            </TabsList>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{draft.id ? "Edit Konten" : "Tambah Konten"}</DialogTitle>
+          </DialogHeader>
 
-            {/* Upload lokal disembunyikan sementara. Logic upload tetap ada di file ini dan backend.
-            <TabsContent value="local" className="space-y-4 mt-4">
-              <div>
-                <Label>Pilih file video</Label>
-                <input ref={fileRef} type="file" accept="video/*" hidden
-                  onChange={(e)=> e.target.files?.[0] && handleFile(e.target.files[0])} />
-                <Button variant="outline" className="w-full mt-1" onClick={()=>fileRef.current?.click()} disabled={Boolean(draft.id)}>
-                  <Upload className="mr-2 h-4 w-4" /> {draft.src ? "Ganti file" : "Pilih file"}
-                </Button>
-                {draft.id ? (
-                  <p className="text-xs text-muted-foreground mt-2">Edit media lokal hanya mengubah judul & status (tanpa ganti file).</p>
-                ) : null}
-                {draft.src && draft.type === "local" && !draft.id && (
-                  <video src={draft.src} controls className="mt-3 w-full rounded-md aspect-video" />
-                )}
+          <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Judul Konten</Label>
+                <Input value={draft.judul_konten} onChange={(event) => setDraft({ ...draft, judul_konten: event.target.value })} />
               </div>
-            </TabsContent>
-            */}
+              <div className="space-y-2">
+                <Label>Jenis Konten</Label>
+                <div className="relative">
+                  <Select value={draft.jenis_konten} onValueChange={(value) => setDraft({ ...draft, jenis_konten: value })}>
+                    <SelectTrigger className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm ring-offset-background transition-colors focus:outline-none focus:ring-2 focus:ring-ring">
+                      <SelectValue placeholder="Pilih jenis konten" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border shadow-xl">
+                      {contentTypes.map((item) => (
+                        <SelectItem key={item.id} value={item.jenis_konten}>
+                          {item.jenis_konten}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {contentTypes.length === 0 ? (
+                    <p className="text-xs text-destructive">Isi Master Jenis Konten terlebih dahulu.</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
 
-            <TabsContent value="youtube" className="space-y-4 mt-4">
-              <div>
-                <Label>Link YouTube</Label>
-                <Input value={draft.src} onChange={(e)=>setDraft({...draft, src:e.target.value})} placeholder="https://www.youtube.com/watch?v=..." />
-              </div>
-              <div>
-                <Label>Durasi (detik)</Label>
-                <Input type="number" value={draft.durationSec ?? 30} onChange={(e)=>setDraft({...draft, durationSec:Number(e.target.value)})} />
-                <p className="text-xs text-muted-foreground mt-1">Berapa lama video diputar sebelum lanjut ke media berikutnya.</p>
-              </div>
-            </TabsContent>
-          </Tabs>
+            <div className="space-y-2">
+              <Label>Source URL</Label>
+              <Textarea
+                value={draft.source_url}
+                onChange={(event) => setDraft({ ...draft, source_url: event.target.value })}
+                placeholder="Silakan tempel link atau video url."
+                className="min-h-[96px]"
+              />
+              <p className="text-xs text-muted-foreground">
+                Masukkan URL atau link video.
+              </p>
+            </div>
 
-          <div className="space-y-3 pt-2">
-            <div><Label>Judul</Label><Input value={draft.title} onChange={(e)=>setDraft({...draft, title:e.target.value})} /></div>
-            <div className="flex items-center gap-3">
-              <Switch checked={draft.active} onCheckedChange={(v)=>setDraft({...draft, active:v})} />
-              <Label className="!m-0">Masukkan ke playlist Display TV</Label>
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label>Deskripsi</Label>
+                <Textarea value={draft.deskripsi} onChange={(event) => setDraft({ ...draft, deskripsi: event.target.value })} placeholder="Opsional" />
+              </div>
+              {/* Durasi tampil disembunyikan sementara.
+                  Logic tetap ada: data lama yang punya durasi tetap dipakai,
+                  video tanpa durasi tampil sampai selesai,
+                  image/embed tanpa durasi default tampil 10 detik. */}
+              {false ? (
+              <div className="space-y-2">
+                <Label>Durasi Tampil (detik)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={draft.durasi_tampil}
+                  onChange={(event) => setDraft({ ...draft, durasi_tampil: event.target.value })}
+                  placeholder="Opsional"
+                />
+                <p className="text-xs text-muted-foreground">Opsional. Kosongkan jika ingin tampil sampai video selesai.</p>
+              </div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <Switch checked={draft.isActive} onCheckedChange={(value) => setDraft({ ...draft, isActive: value })} />
+              <Label className="!m-0">Aktifkan konten di Display TV</Label>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={()=>setOpen(false)}>Batal</Button>
-            <Button onClick={()=>saveMutation.mutate()} disabled={saveMutation.isPending}>Simpan</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Batal</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || contentTypes.length === 0}>
+              Simpan
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={Boolean(confirm)} onOpenChange={(v) => !v && setConfirm(null)}>
+      <AlertDialog open={Boolean(confirm)} onOpenChange={(value) => !value && setConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus media?</AlertDialogTitle>
-            <AlertDialogDescription>Media yang dihapus tidak bisa dikembalikan.</AlertDialogDescription>
+            <AlertDialogTitle>Hapus konten?</AlertDialogTitle>
+            <AlertDialogDescription>Konten yang dihapus tidak bisa dikembalikan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
@@ -277,34 +356,132 @@ export default function MediaPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <PreviewDialog open={Boolean(preview)} onOpenChange={(v) => !v && setPreview(null)}>
-        <PreviewDialogContent className="max-w-4xl">
-          <PreviewDialogHeader>
-            <PreviewDialogTitle>Preview Media</PreviewDialogTitle>
-          </PreviewDialogHeader>
+      <Dialog open={Boolean(preview)} onOpenChange={(value) => !value && setPreview(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Preview Konten</DialogTitle>
+          </DialogHeader>
           {preview ? (
-            <div className="aspect-video w-full overflow-hidden rounded-md bg-secondary">
-              {preview.type === "youtube" && preview.embedUrl ? (
-                <iframe
-                  className="h-full w-full"
-                  src={preview.embedUrl}
-                  title={preview.label}
-                  allow="autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : preview.type === "file" && preview.url ? (
-                <video className="h-full w-full" src={preview.url} controls autoPlay />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">Tidak ada media</div>
-              )}
-            </div>
+            <MediaPreview url={preview.display_url || preview.source_url} title={preview.judul_konten} sourceType={preview.source_type} />
           ) : null}
           <div className="text-sm">
-            <p className="font-medium">{preview?.label}</p>
-            <p className="text-xs text-muted-foreground truncate">{preview?.type === "youtube" ? preview?.sourceUrl : preview?.url}</p>
+            <p className="font-medium">{preview?.judul_konten}</p>
+            <p className="text-xs text-muted-foreground break-all">{preview?.source_url}</p>
           </div>
-        </PreviewDialogContent>
-      </PreviewDialog>
+        </DialogContent>
+      </Dialog>
     </>
   );
+}
+
+function MediaPreview({ url, title, sourceType }: { url?: string; title: string; sourceType?: string }) {
+  const source = url || "";
+  const type = sourceType || detectPreviewType(source);
+
+  return (
+    <div className="aspect-video w-full overflow-hidden rounded-md bg-secondary">
+      {type === "image" ? (
+        <img src={source} alt={title} className="h-full w-full object-contain" />
+      ) : type === "video" || /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(source) ? (
+        <video className="h-full w-full" src={source} controls autoPlay />
+      ) : source ? (
+        <iframe
+          className="h-full w-full"
+          src={source}
+          title={title}
+          allow="autoplay; encrypted-media; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Tidak ada media</div>
+      )}
+    </div>
+  );
+}
+
+function ContentPoster({ content }: { content: Content }) {
+  const source = content.display_url || content.source_url || "";
+  const youtubeId = getYoutubeId(content.source_url);
+
+  if (youtubeId) {
+    return <img src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} alt={content.judul_konten} className="h-full w-full object-cover" />;
+  }
+
+  const driveId = getGoogleDriveId(content.source_url);
+  if (driveId) {
+    return (
+      <DrivePoster
+        title={content.judul_konten}
+        subtitle={content.source_type === "image" ? "Google Drive Image" : "Google Drive Media"}
+      />
+    );
+  }
+
+  if (content.source_type === "image" || /\.(png|jpe?g|gif|webp|avif|svg)(\?|$)/i.test(source)) {
+    return <img src={source} alt={content.judul_konten} className="h-full w-full object-cover" />;
+  }
+
+  if (content.source_type === "video" || /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(source)) {
+    return <video src={source} className="h-full w-full object-cover" muted playsInline preload="metadata" />;
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,hsl(var(--accent)/0.35),transparent_32%),linear-gradient(135deg,hsl(var(--secondary)),hsl(var(--card)))]">
+      <div className="rounded-2xl border border-border/60 bg-background/70 p-5 text-center shadow-lg backdrop-blur">
+        <FileVideo className="mx-auto h-9 w-9 text-accent" />
+        <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Preview Konten</p>
+      </div>
+    </div>
+  );
+}
+
+function DrivePoster({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_28%_20%,rgba(251,191,36,0.34),transparent_30%),linear-gradient(135deg,#151515,#2b2414_48%,#090909)]">
+      <div className="absolute -left-10 top-8 h-32 w-32 rounded-full bg-amber-300/20 blur-3xl" />
+      <div className="absolute bottom-0 right-0 h-36 w-36 rounded-full bg-sky-300/10 blur-3xl" />
+      <div className="relative rounded-2xl border border-amber-300/25 bg-black/35 px-6 py-5 text-center shadow-2xl backdrop-blur-md">
+        <FileVideo className="mx-auto h-10 w-10 text-amber-200" />
+        <p className="mt-3 text-xs font-bold uppercase tracking-[0.28em] text-amber-100">Drive Preview</p>
+        <p className="mt-2 max-w-56 truncate text-sm font-semibold text-white">{title}</p>
+        <p className="mt-1 text-xs text-white/60">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+function detectPreviewType(url: string) {
+  const cleanUrl = url.split("?")[0].toLowerCase();
+  if (/\.(png|jpe?g|gif|webp|avif|svg)$/i.test(cleanUrl)) return "image";
+  if (/\.(mp4|webm|ogg|mov|m4v)$/i.test(cleanUrl)) return "video";
+  return "embed";
+}
+
+function getYoutubeId(url = "") {
+  const patterns = [
+    /youtu\.be\/([^?&/]+)/,
+    /youtube\.com\/watch\?v=([^?&/]+)/,
+    /youtube\.com\/embed\/([^?&/]+)/,
+    /youtube\.com\/shorts\/([^?&/]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return "";
+}
+
+function getGoogleDriveId(url = "") {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes("drive.google.com")) return "";
+    const fileMatch = parsed.pathname.match(/\/file\/d\/([^/]+)/);
+    if (fileMatch?.[1]) return fileMatch[1];
+    return parsed.searchParams.get("id") || "";
+  } catch {
+    return "";
+  }
 }

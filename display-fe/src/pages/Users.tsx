@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ChevronDown, X, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, X, Plus, Pencil, Search, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,12 +45,20 @@ export default function Users() {
   const [rolePickerOpen, setRolePickerOpen] = useState(false);
   const [draft, setDraft] = useState<UserDraft>(empty);
   const [confirm, setConfirm] = useState<UserDraft | null>(null);
+  const [search, setSearch] = useState("");
   const qc = useQueryClient();
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: listUsers,
     enabled: isAdmin,
   });
+  const filteredUsers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return users.filter((user: any) =>
+      !query ||
+      [user.username, user.level, user.isActive ? "aktif" : "nonaktif"].join(" ").toLowerCase().includes(query)
+    );
+  }, [users, search]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -113,10 +121,21 @@ export default function Users() {
       <PageHeader
         title="Manage User"
         description="Kelola pengguna yang dapat mengakses sistem."
-        action={<Button onClick={onNew}><Plus className="mr-2 h-4 w-4" /> Tambah User</Button>}
       />
 
       <Card className="border-border/70 overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Cari username, role, atau status..."
+              className="pl-9"
+            />
+          </div>
+          <Button onClick={onNew}><Plus className="mr-2 h-4 w-4" /> Tambah User</Button>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -130,7 +149,7 @@ export default function Users() {
             {isLoading && (
               <TableRow><TableCell colSpan={4} className="text-center py-12 text-sm text-muted-foreground">Loading…</TableCell></TableRow>
             )}
-            {users.map((u: any) => (
+            {filteredUsers.map((u: any) => (
               <TableRow key={u.id}>
                 <TableCell className="text-muted-foreground font-mono text-xs">{u.username}</TableCell>
                 <TableCell><Badge variant="secondary">{formatRole(u.level)}</Badge></TableCell>
@@ -149,6 +168,11 @@ export default function Users() {
                 </TableCell>
               </TableRow>
             ))}
+            {!isLoading && filteredUsers.length === 0 && (
+              <TableRow><TableCell colSpan={4} className="text-center py-12 text-sm text-muted-foreground">
+                {users.length ? "User tidak ditemukan." : "Belum ada user."}
+              </TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
       </Card>

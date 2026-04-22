@@ -23,11 +23,43 @@ export type Category = {
 export type Media = {
   id: string;
   label: string;
-  type: "file" | "youtube";
+  type: "file" | "youtube" | "video" | "image" | "embed" | "promo" | "url";
   url?: string;
   sourceUrl?: string;
   embedUrl?: string;
+  displayUrl?: string;
+  sourceType?: string;
+  description?: string;
+  origin?: "promo" | "content" | "media";
   durationSec?: number;
+  isActive: boolean;
+};
+
+export type ContentType = {
+  id: string;
+  jenis_konten: string;
+};
+
+export type Content = {
+  id: string;
+  judul_konten: string;
+  jenis_konten: string;
+  source_url: string;
+  deskripsi: string;
+  durasi_tampil?: number | null;
+  source_type?: string;
+  display_url?: string;
+  isActive: boolean;
+};
+
+export type Promo = {
+  id: string;
+  judul_promo: string;
+  deskripsi_promo: string;
+  banner_opsional: string;
+  media_opsional: string;
+  source_type?: string;
+  display_url?: string;
   isActive: boolean;
 };
 
@@ -36,6 +68,8 @@ export type SystemSetting = {
   companyName: string;
   address: string;
   phone: string;
+  operationalDays: string;
+  operationalHours: string;
 };
 
 export async function login(username: string, password: string) {
@@ -69,6 +103,78 @@ export async function updateCategory(id: string, payload: Partial<Category>) {
 
 export async function deleteCategory(id: string) {
   await apiJson<ApiResponse<null>>(`/categories/${id}`, { method: "DELETE" });
+}
+
+export async function listContentTypes() {
+  return apiJson<ApiResponse<ContentType[]>>("/content-types").then((r) => r.data);
+}
+
+export async function createContentType(payload: Partial<ContentType>) {
+  return apiJson<ApiResponse<ContentType>>("/content-types", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }).then((r) => r.data);
+}
+
+export async function updateContentType(id: string, payload: Partial<ContentType>) {
+  return apiJson<ApiResponse<ContentType>>(`/content-types/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  }).then((r) => r.data);
+}
+
+export async function deleteContentType(id: string) {
+  await apiJson<ApiResponse<null>>(`/content-types/${id}`, { method: "DELETE" });
+}
+
+export async function listContents() {
+  return apiJson<ApiResponse<Content[]>>("/contents").then((r) => r.data);
+}
+
+export async function createContent(payload: Partial<Content>) {
+  return apiJson<ApiResponse<Content>>("/contents", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }).then((r) => r.data);
+}
+
+export async function updateContent(id: string, payload: Partial<Content>) {
+  return apiJson<ApiResponse<Content>>(`/contents/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  }).then((r) => r.data);
+}
+
+export async function deleteContent(id: string) {
+  await apiJson<ApiResponse<null>>(`/contents/${id}`, { method: "DELETE" });
+}
+
+export async function listPromos() {
+  return apiJson<ApiResponse<Promo[]>>("/promos").then((r) => r.data);
+}
+
+export async function createPromo(payload: Partial<Promo>) {
+  return apiJson<ApiResponse<Promo>>("/promos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }).then((r) => r.data);
+}
+
+export async function updatePromo(id: string, payload: Partial<Promo>) {
+  return apiJson<ApiResponse<Promo>>(`/promos/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  }).then((r) => r.data);
+}
+
+export async function deletePromo(id: string) {
+  await apiJson<ApiResponse<null>>(`/promos/${id}`, { method: "DELETE" });
+}
+
+export async function uploadAsset(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  return apiForm<ApiResponse<{ fileName: string; url: string }>>("/uploads", form).then((r) => r.data);
 }
 
 export async function listMedia() {
@@ -136,5 +242,5 @@ export async function updateSystem(payload: SystemSetting) {
 }
 
 export async function getDisplay() {
-  return apiJson<ApiResponse<{ categories: Category[]; media: Media[]; system: SystemSetting }>>("/display").then((r) => r.data);
+  return apiJson<ApiResponse<{ categories: Category[]; contents?: Content[]; promos?: Promo[]; media: Media[]; system: SystemSetting }>>("/display").then((r) => r.data);
 }
