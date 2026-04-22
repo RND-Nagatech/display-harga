@@ -171,7 +171,7 @@ export default function MediaPage() {
                 <SelectTrigger>
                   <SelectValue placeholder="Filter jenis konten" />
                 </SelectTrigger>
-                <SelectContent className="z-[400] border border-border bg-popover text-popover-foreground shadow-2xl">
+                <SelectContent className="z-[400] border border-border bg-popover text-popover-foreground shadow-md">
                   <SelectItem value="all">SEMUA</SelectItem>
                   {contentTypes.map((item) => (
                     <SelectItem key={item.id} value={item.jenis_konten}>

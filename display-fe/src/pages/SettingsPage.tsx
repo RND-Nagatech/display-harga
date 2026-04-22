@@ -114,7 +114,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="mt-6 flex justify-end gap-2">
-                <Button variant="ghost" onClick={()=>setConfirmReset(true)} disabled={!isAdmin}>Reset</Button>
+                <Button variant="outline" onClick={()=>setConfirmReset(true)} disabled={!isAdmin}>Reset</Button>
                 <Button onClick={()=>saveMutation.mutate()} disabled={!isAdmin || saveMutation.isPending}>
                   Simpan Pengaturan
                 </Button>

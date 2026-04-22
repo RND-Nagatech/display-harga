@@ -64,7 +64,7 @@ export default function Dashboard() {
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
         <Card className="p-6 lg:col-span-2 border-border/70">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-foreground">Kategori Terbaru</h2>
+            <h2 className="text-sm font-semibold text-foreground">Daftar Harga Terbaru</h2>
             <Link to="/categories" className="text-xs font-medium text-accent inline-flex items-center gap-1">
               Lihat semua <ArrowUpRight className="h-3 w-3" />
             </Link>

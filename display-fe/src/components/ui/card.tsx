@@ -5,7 +5,10 @@ export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("rounded-xl border border-border bg-card text-card-foreground shadow-sm", className)}
+      className={cn(
+        "admin-card-soft rounded-2xl border border-border/70 text-card-foreground",
+        className
+      )}
       {...props}
     />
   )
@@ -46,4 +49,3 @@ export const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
   )
 );
 CardFooter.displayName = "CardFooter";
-

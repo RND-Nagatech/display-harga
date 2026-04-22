@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 export const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="w-full overflow-auto rounded-xl border border-border bg-card">
+    <div className="w-full overflow-auto rounded-2xl border border-border/70 bg-card/95 shadow-md">
       <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   )
@@ -12,14 +12,14 @@ Table.displayName = "Table";
 
 export const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
   ({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn("[&_tr]:border-b-2 [&_tr]:border-border", className)} {...props} />
+    <thead ref={ref} className={cn("[&_tr]:border-b [&_tr]:border-border/80", className)} {...props} />
   )
 );
 TableHeader.displayName = "TableHeader";
 
 export const TableBody = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
   ({ className, ...props }, ref) => (
-    <tbody ref={ref} className={cn("[&_tr]:border-b [&_tr]:border-border [&_tr:nth-child(even)]:bg-muted/20", className)} {...props} />
+    <tbody ref={ref} className={cn("[&_tr]:border-b [&_tr]:border-border/60 [&_tr:nth-child(even)]:bg-muted/20", className)} {...props} />
   )
 );
 TableBody.displayName = "TableBody";
@@ -28,7 +28,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttribut
   ({ className, ...props }, ref) => (
     <tr
       ref={ref}
-      className={cn("transition-colors hover:bg-muted/40 data-[state=selected]:bg-muted", className)}
+      className={cn("transition-colors hover:bg-muted/45 data-[state=selected]:bg-muted", className)}
       {...props}
     />
   )
@@ -39,7 +39,7 @@ export const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttr
   ({ className, ...props }, ref) => (
     <th
       ref={ref}
-      className={cn("h-11 px-4 text-left align-middle font-medium text-foreground bg-muted/60 [&:has([role=checkbox])]:pr-0", className)}
+      className={cn("h-12 bg-muted/65 px-4 text-left align-middle text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground [&:has([role=checkbox])]:pr-0", className)}
       {...props}
     />
   )
@@ -48,7 +48,7 @@ TableHead.displayName = "TableHead";
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement>>(
   ({ className, ...props }, ref) => (
-    <td ref={ref} className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)} {...props} />
+    <td ref={ref} className={cn("p-4 align-middle font-normal [&:has([role=checkbox])]:pr-0", className)} {...props} />
   )
 );
 TableCell.displayName = "TableCell";
@@ -59,4 +59,3 @@ export const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTML
   )
 );
 TableCaption.displayName = "TableCaption";
-
