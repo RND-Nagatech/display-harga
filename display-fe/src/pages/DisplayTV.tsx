@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Clock3, Maximize2, MessageCircle, Store } from "lucide-react";
 import { getDisplay, type Category, type Media } from "@/lib/backend";
 import goldHeroImage from "@/assets/gold-tv-hero.png";
 import "./DisplayTVMonolith.css";
 
-const REFRESH_INTERVAL = 30_000;
+const DEFAULT_REFRESH_INTERVAL = 300_000;
 const CLOCK_INTERVAL = 1_000;
 const HIGHLIGHT_INTERVAL = 5_000;
 const PAGE_ROTATE_INTERVAL = 8_000;
@@ -23,10 +23,9 @@ export default function DisplayTV() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["display"],
     queryFn: getDisplay,
-    refetchInterval: REFRESH_INTERVAL,
+    refetchInterval: (query) => getDisplayRefreshInterval(query.state.data?.system?.displayRefreshMinutes),
   });
 
-  const [currentTime, setCurrentTime] = useState(() => new Date());
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
@@ -73,11 +72,6 @@ export default function DisplayTV() {
       setLastUpdated(new Date());
     }
   }, [data]);
-
-  useEffect(() => {
-    const clockTimer = window.setInterval(() => setCurrentTime(new Date()), CLOCK_INTERVAL);
-    return () => window.clearInterval(clockTimer);
-  }, []);
 
   useEffect(() => {
     setPageIndex(0);
@@ -172,7 +166,7 @@ export default function DisplayTV() {
   }, [groups, pageIndex]);
   const leftGroups = pagedGroups.slice(0, ROWS_PER_SIDE);
   const rightGroups = pagedGroups.slice(ROWS_PER_SIDE, ROWS_PER_SIDE * 2);
-  const tickerGroups = groups.slice(0, 8);
+  const tickerGroups = useMemo(() => groups.slice(0, 8), [groups]);
   const statusText = isError ? "Koneksi bermasalah" : lastUpdated ? "Sinkron otomatis aktif" : "Menunggu data";
   const headlineText = "MURNI • ELEGAN • BERNILAI TINGGI";
   const headlineScale = getHeadlineScale(headlineText);
@@ -208,9 +202,14 @@ export default function DisplayTV() {
   return (
     <div className="tv-monolith-screen" onDoubleClick={requestFullscreen}>
       {!isFullscreen ? (
-        <button type="button" className="tv-monolith-fullscreen-button" onClick={requestFullscreen}>
-          <Maximize2 className="h-4 w-4" />
-          Fullscreen TV
+        <button
+          type="button"
+          className="tv-monolith-fullscreen-badge"
+          onClick={requestFullscreen}
+          aria-label="Fullscreen TV"
+        >
+          <Maximize2 className="h-3 w-3" />
+          <span className="sr-only">Fullscreen TV</span>
         </button>
       ) : null}
 
@@ -224,7 +223,7 @@ export default function DisplayTV() {
 
         <div className="tv-monolith-market-block">
           <div className="tv-monolith-market-title">Live Market Data</div>
-          <div className="tv-monolith-market-subtitle">{formatDateTime(currentTime)}</div>
+          <DisplayClock />
         </div>
       </header>
 
@@ -438,7 +437,7 @@ function PriceTable({ title, rows, pageKey }: { title: string; rows: PriceGroup[
   );
 }
 
-function RunningTicker({ items }: { items: PriceGroup[] }) {
+const RunningTicker = memo(function RunningTicker({ items }: { items: PriceGroup[] }) {
   const tickerItems = items.length > 0
     ? [...items, ...items]
     : [{ id: "empty", kode_group: "INFO", nama_group: "Data belum tersedia", harga: 0, harga_buyback: 0 }];
@@ -456,6 +455,17 @@ function RunningTicker({ items }: { items: PriceGroup[] }) {
       </div>
     </div>
   );
+});
+
+function DisplayClock() {
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+
+  useEffect(() => {
+    const clockTimer = window.setInterval(() => setCurrentTime(new Date()), CLOCK_INTERVAL);
+    return () => window.clearInterval(clockTimer);
+  }, []);
+
+  return <div className="tv-monolith-market-subtitle">{formatDateTime(currentTime)}</div>;
 }
 
 function HeroFallback() {
@@ -584,6 +594,15 @@ function getHeadlineScale(value: string) {
   if (value.length >= 22) return 0.68;
   if (value.length >= 18) return 0.8;
   return 1;
+}
+
+function getDisplayRefreshInterval(minutes?: number | null) {
+  const numericValue = Number(minutes);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return DEFAULT_REFRESH_INTERVAL;
+  }
+
+  return Math.max(1, Math.min(1440, Math.round(numericValue))) * 60_000;
 }
 
 function formatPrice(value?: number | null) {

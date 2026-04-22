@@ -70,6 +70,7 @@ export type SystemSetting = {
   phone: string;
   operationalDays: string;
   operationalHours: string;
+  displayRefreshMinutes: number;
 };
 
 export async function login(username: string, password: string) {

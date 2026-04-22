@@ -374,7 +374,7 @@ Data yang dipakai:
 - `system` dari `tp_system`
 
 Behavior:
-- Refresh data otomatis setiap 30 detik.
+- Refresh data sesuai settingan.
 - Jam berjalan realtime.
 - Kategori dibagi kiri dan kanan.
 - Jika data lebih banyak dari kapasitas layar, halaman list berganti otomatis.

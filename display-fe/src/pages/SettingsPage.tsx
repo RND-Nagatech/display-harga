@@ -36,6 +36,7 @@ export default function SettingsPage() {
     phone: "",
     operationalDays: "",
     operationalHours: "",
+    displayRefreshMinutes: 30,
   });
 
   useEffect(() => {
@@ -90,6 +91,18 @@ export default function SettingsPage() {
                   <Label>Jam Buka</Label>
                   <Input value={draft.operationalHours} onChange={(e)=>setDraft({...draft, operationalHours:e.target.value})} placeholder="09.00 - 21.00" />
                 </div>
+                <div>
+                  <Label>Refresh Data Display TV (menit)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={1440}
+                    value={draft.displayRefreshMinutes}
+                    onChange={(e)=>setDraft({...draft, displayRefreshMinutes:Number(e.target.value) || 5})}
+                    placeholder="5"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">Interval ambil ulang harga/konten. Default 5 menit.</p>
+                </div>
               </div>
               <div className="mt-6 flex justify-end gap-2">
                 <Button variant="ghost" onClick={()=>setConfirmReset(true)} disabled={!isAdmin}>Reset</Button>
@@ -113,6 +126,8 @@ export default function SettingsPage() {
             <p className="text-foreground font-medium">{draft.phone || "-"}</p>
             <p className="text-muted-foreground">{draft.operationalDays || "Hari operasional"}</p>
             <p className="text-foreground font-medium">{draft.operationalHours || "Jam operasional"}</p>
+            <p className="text-muted-foreground">Refresh Display TV</p>
+            <p className="text-foreground font-medium">{draft.displayRefreshMinutes || 5} menit</p>
           </div>
         </Card>
       </div>
@@ -130,8 +145,8 @@ export default function SettingsPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
-                setDraft({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "" });
-                updateSystem({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "" })
+                setDraft({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "", displayRefreshMinutes: 5 });
+                updateSystem({ companyCode: "", companyName: "", address: "", phone: "", operationalDays: "", operationalHours: "", displayRefreshMinutes: 5 })
                   .then(() => {
                     qc.invalidateQueries({ queryKey: ["system"] });
                     qc.invalidateQueries({ queryKey: ["display"] });

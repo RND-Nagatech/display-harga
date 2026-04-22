@@ -52,6 +52,7 @@ await tpSystem.updateOne(
       phone: "",
       operationalDays: "",
       operationalHours: "",
+      displayRefreshMinutes: 5,
       updatedAt: new Date().toISOString()
     }
   },
@@ -451,6 +452,7 @@ app.put("/api/system", requireAuth, requireAdmin, async (req, res) => {
     phone: String(req.body.phone || "").trim(),
     operationalDays: String(req.body.operationalDays || "").trim(),
     operationalHours: String(req.body.operationalHours || "").trim(),
+    displayRefreshMinutes: normalizeRefreshMinutes(req.body.displayRefreshMinutes),
     updatedAt: new Date().toISOString()
   };
   await tpSystem.updateOne({ _id: "singleton" }, { $set: payload }, { upsert: true });
@@ -587,6 +589,7 @@ function sanitizeSystem(system) {
     phone: system.phone || "",
     operationalDays: system.operationalDays || "",
     operationalHours: system.operationalHours || "",
+    displayRefreshMinutes: normalizeRefreshMinutes(system.displayRefreshMinutes),
     updatedAt: system.updatedAt
   };
 }
@@ -726,6 +729,15 @@ function normalizePromoPayload(body) {
     banner_opsional: String(body.banner_opsional || body.bannerOpsional || "").trim(),
     media_opsional: String(body.media_opsional || body.mediaOpsional || "").trim()
   };
+}
+
+function normalizeRefreshMinutes(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return 5;
+  }
+
+  return Math.max(1, Math.min(1440, Math.round(numericValue)));
 }
 
 function getDisplayDurationSec(sourceType, durationSec) {
