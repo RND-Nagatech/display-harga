@@ -777,6 +777,7 @@ html:not(.dark) .tv-monolith-copyright {
 .tv-monolith-ticker {
   width: 100%;
   overflow: hidden;
+  padding: 1px 0;
 }
 
 .tv-monolith-ticker-track {
@@ -815,16 +816,78 @@ html:not(.dark) .tv-monolith-copyright {
   font-weight: 800;
 }
 
+.tv-monolith-service-strip {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 34px;
+  margin: 8px 0 6px;
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px dashed rgba(242, 202, 80, 0.38);
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(242, 202, 80, 0.09), rgba(255, 255, 255, 0.035), rgba(242, 202, 80, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.tv-monolith-service-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--tv-text);
+  font-size: clamp(11px, 0.92vw, 15px);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.tv-monolith-service-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--tv-gold);
+  stroke-width: 2.4;
+}
+
+.tv-monolith-service-icon.is-whatsapp {
+  color: var(--tv-success);
+}
+
+.tv-monolith-service-icon.is-clock {
+  color: var(--tv-gold);
+}
+
+.tv-monolith-service-icon.is-store {
+  color: var(--tv-gold);
+}
+
+.tv-monolith-service-item.is-update {
+  color: var(--tv-text-soft);
+  font-size: clamp(10px, 0.8vw, 13px);
+}
+
+.tv-monolith-service-separator {
+  width: 2px;
+  height: 18px;
+  flex: 0 0 auto;
+  background: rgba(242, 202, 80, 0.45);
+  border-radius: 999px;
+}
+
 .tv-monolith-bottom-strip {
   position: relative;
   z-index: 1;
   width: 100%;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: block;
   align-items: center;
-  gap: 10px;
-  min-height: 32px;
+  min-height: 36px;
   margin: 0 0 2px;
+  overflow: hidden;
 }
 
 .tv-monolith-sync-status,

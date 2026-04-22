@@ -79,7 +79,7 @@ export default function SettingsPage() {
                   <Textarea rows={3} value={draft.address} onChange={(e)=>setDraft({...draft, address:e.target.value})} />
                 </div>
                 <div>
-                  <Label>No. Telepon</Label>
+                  <Label>Nomor HP / WhatsApp</Label>
                   <Input value={draft.phone} onChange={(e)=>setDraft({...draft, phone:e.target.value})} placeholder="+62 …" />
                 </div>
                 <div>

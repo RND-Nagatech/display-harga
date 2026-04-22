@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Clock3, MessageCircle, Store } from "lucide-react";
 import { getDisplay, type Category, type Media } from "@/lib/backend";
 import goldHeroImage from "@/assets/gold-tv-hero.png";
 import "./DisplayTVMonolith.css";
@@ -31,6 +32,7 @@ export default function DisplayTV() {
   const [pageIndex, setPageIndex] = useState(0);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [isHeroMediaReady, setIsHeroMediaReady] = useState(false);
+  const [driveFallbackIds, setDriveFallbackIds] = useState<Set<string>>(() => new Set());
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const settings = data?.system;
@@ -40,6 +42,8 @@ export default function DisplayTV() {
   const groups = useMemo(() => normalizeCategories(data?.categories || []), [data?.categories]);
   const heroMedia = useMemo(() => (data?.media || []).filter((item) => item.isActive !== false), [data?.media]);
   const activeHeroMedia = heroMedia[mediaIndex] || null;
+  const activeDriveUrl = getGoogleDriveUrl(activeHeroMedia);
+  const shouldUseDriveFallback = Boolean(activeHeroMedia && driveFallbackIds.has(activeHeroMedia.id));
 
   useEffect(() => {
     document.body.classList.add("tv-monolith-active");
@@ -119,6 +123,18 @@ export default function DisplayTV() {
     return undefined;
   }, [activeHeroMedia, heroMedia.length]);
 
+  useEffect(() => {
+    if (!activeHeroMedia || !activeDriveUrl || shouldUseDriveFallback || isHeroMediaReady) {
+      return undefined;
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      fallbackToDrivePreview(activeHeroMedia.id);
+    }, 4500);
+
+    return () => window.clearTimeout(fallbackTimer);
+  }, [activeHeroMedia, activeDriveUrl, shouldUseDriveFallback, isHeroMediaReady]);
+
   const highestPrice = useMemo(() => {
     if (!groups.length) {
       return null;
@@ -154,6 +170,16 @@ export default function DisplayTV() {
     setMediaIndex((current) => (current + 1) % heroMedia.length);
   };
 
+  const fallbackToDrivePreview = (mediaId?: string) => {
+    if (!mediaId) return;
+    setDriveFallbackIds((current) => {
+      const next = new Set(current);
+      next.add(mediaId);
+      return next;
+    });
+    setIsHeroMediaReady(false);
+  };
+
   return (
     <div className="tv-monolith-screen">
       <div className="tv-monolith-ambient tv-monolith-ambient-left" />
@@ -180,7 +206,24 @@ export default function DisplayTV() {
             <div className={`tv-monolith-hero-media ${activeHeroMedia && !isHeroMediaReady ? "is-media-loading" : ""}`.trim()}>
               {!activeHeroMedia || !isHeroMediaReady ? <HeroFallback /> : null}
 
-              {activeHeroMedia?.type === "youtube" && youtubeEmbedUrl ? (
+              {activeHeroMedia && activeDriveUrl && !shouldUseDriveFallback ? (
+                <video
+                  key={`${activeHeroMedia.id}-${mediaIndex}-drive-direct`}
+                  ref={videoRef}
+                  src={toGoogleDriveDirectUrl(activeDriveUrl)}
+                  className="tv-monolith-hero-video"
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="auto"
+                  controls={false}
+                  loop={heroMedia.length === 1}
+                  onCanPlay={() => setIsHeroMediaReady(true)}
+                  onLoadedData={() => setIsHeroMediaReady(true)}
+                  onEnded={goToNextMedia}
+                  onError={() => fallbackToDrivePreview(activeHeroMedia.id)}
+                />
+              ) : activeHeroMedia?.type === "youtube" && youtubeEmbedUrl ? (
                 <iframe
                   key={`${activeHeroMedia.id}-${mediaIndex}`}
                   src={youtubeEmbedUrl}
@@ -280,15 +323,34 @@ export default function DisplayTV() {
         </div>
       </main>
 
-      <div className="tv-monolith-bottom-strip">
-        <div className="tv-monolith-sync-status">
+      <div className="tv-monolith-service-strip">
+        <div className="tv-monolith-service-item is-status">
           <span className={`tv-monolith-status-dot ${isError ? "is-error" : "is-ok"}`} />
           <span>{statusText}</span>
         </div>
-        <RunningTicker items={tickerGroups} />
-        <div className="tv-monolith-last-update">
-          {isLoading ? "Memuat data..." : `Update terakhir ${formatClock(lastUpdated)}`}
+        <div className="tv-monolith-service-separator" />
+        <div className="tv-monolith-service-item">
+          <MessageCircle className="tv-monolith-service-icon is-whatsapp" />
+          <span>Whatsapp: {formatWhatsapp(settings?.phone)}</span>
         </div>
+        <div className="tv-monolith-service-separator" />
+        <div className="tv-monolith-service-item">
+          <Clock3 className="tv-monolith-service-icon is-clock" />
+          <span>Jam Operasional: {formatOperational(settings?.operationalDays, settings?.operationalHours)}</span>
+        </div>
+        <div className="tv-monolith-service-separator" />
+        <div className="tv-monolith-service-item">
+          <Store className="tv-monolith-service-icon is-store" />
+          <span>Melayani Jual • Beli • Tukar Tambah</span>
+        </div>
+        <div className="tv-monolith-service-separator" />
+        <div className="tv-monolith-service-item is-update">
+          <span>{isLoading ? "Memuat data..." : `Update terakhir ${formatClock(lastUpdated)}`}</span>
+        </div>
+      </div>
+
+      <div className="tv-monolith-bottom-strip">
+        <RunningTicker items={tickerGroups} />
       </div>
 
       <footer className="tv-monolith-footer tv-monolith-footer-copyright">
@@ -445,6 +507,28 @@ function getHeroSourceUrl(activeMedia: Media | null) {
   return activeMedia.displayUrl || activeMedia.embedUrl || activeMedia.url || activeMedia.sourceUrl || "";
 }
 
+function getGoogleDriveUrl(activeMedia: Media | null) {
+  const source = activeMedia?.sourceUrl || activeMedia?.url || activeMedia?.displayUrl || activeMedia?.embedUrl || "";
+  return source.includes("drive.google.com") ? source : "";
+}
+
+function toGoogleDriveDirectUrl(url: string) {
+  const id = getGoogleDriveId(url);
+  return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
+}
+
+function getGoogleDriveId(url = "") {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes("drive.google.com")) return "";
+    const fileMatch = parsed.pathname.match(/\/file\/d\/([^/]+)/);
+    if (fileMatch?.[1]) return fileMatch[1];
+    return parsed.searchParams.get("id") || "";
+  } catch {
+    return "";
+  }
+}
+
 function getYoutubeId(url: string) {
   const patterns = [
     /youtu\.be\/([^?&/]+)/,
@@ -509,6 +593,18 @@ function formatClock(value: Date | null) {
     minute: "2-digit",
     second: "2-digit",
   }).format(value);
+}
+
+function formatWhatsapp(value?: string) {
+  const phone = String(value || "").trim();
+  return phone || "-";
+}
+
+function formatOperational(days?: string, hours?: string) {
+  const dayText = String(days || "").trim();
+  const hourText = String(hours || "").trim();
+  if (dayText && hourText) return `${dayText}, ${hourText}`;
+  return dayText || hourText || "-";
 }
 
 function shortenName(value: string, maxLength = 22) {
