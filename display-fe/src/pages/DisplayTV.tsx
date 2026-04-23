@@ -124,16 +124,23 @@ export default function DisplayTV() {
       return undefined;
     }
 
-    if (activeHeroMedia.durationSec && activeHeroMedia.durationSec > 0) {
-      const timer = window.setTimeout(() => {
+    let timer: number | undefined;
+
+    if (activeHeroMedia.type === "image") {
+      timer = window.setTimeout(() => {
+        setMediaIndex((current) => (current + 1) % heroMedia.length);
+      }, 10000);
+    } else if (activeHeroMedia.durationSec && activeHeroMedia.durationSec > 0) {
+      timer = window.setTimeout(() => {
         setMediaIndex((current) => (current + 1) % heroMedia.length);
       }, activeHeroMedia.durationSec * 1000);
-
-      return () => window.clearTimeout(timer);
     }
+    // Untuk video/youtube, tidak ada timer, hanya lanjut via onEnded
 
-    return undefined;
-  }, [activeHeroMedia, heroMedia.length]);
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [activeHeroMedia?.id, heroMedia.length]);
 
   useEffect(() => {
     if (!activeHeroMedia || !activeDriveUrl || shouldUseDriveFallback || isHeroMediaReady) {

@@ -129,7 +129,7 @@ export default function Login() {
               Selamat datang <span className="text-gradient-primary">kembali</span>
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Masuk untuk mengelola kategori, media, dan tayangan TV Anda.
+              Masuk untuk mengelola Display TV Anda.
             </p>
           </div>
 

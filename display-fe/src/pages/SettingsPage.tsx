@@ -57,7 +57,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Pengaturan Sistem"
-        description="Identitas perusahaan Anda yang akan tampil di Display TV dan dokumen."
+        description="Kelola Identitas Toko Anda yang akan tampil di Display TV."
       />
 
       <div className="grid gap-6 lg:grid-cols-3">

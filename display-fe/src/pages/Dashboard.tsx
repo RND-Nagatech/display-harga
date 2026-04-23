@@ -25,7 +25,7 @@ export default function Dashboard() {
     <>
       <PageHeader
         title="Dashboard"
-        description="Kelola harga emas, konten, promo, user, dan pengaturan display."
+        description="Ringkasan Data Display TV Toko Emas."
         action={
           <Button asChild>
             <a href="/display" target="_blank" rel="noreferrer">
