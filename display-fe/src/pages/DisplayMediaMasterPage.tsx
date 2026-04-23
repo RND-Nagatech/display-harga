@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Megaphone, Pencil, PlayCircle, Plus, Search, Trash2, Upload } from "lucide-react";
+import { ImagePlay, Pencil, PlayCircle, Plus, Search, Trash2, Upload } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,110 +33,128 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { createPromo, deletePromo, listPromos, updatePromo, uploadAsset, type Promo } from "@/lib/backend";
+import { uploadAsset, type DisplayMasterItem } from "@/lib/backend";
 
-type PromoDraft = Promo;
+type MasterApi = {
+  list: () => Promise<DisplayMasterItem[]>;
+  create: (payload: Partial<DisplayMasterItem>) => Promise<DisplayMasterItem>;
+  update: (id: string, payload: Partial<DisplayMasterItem>) => Promise<DisplayMasterItem>;
+  delete: (id: string) => Promise<unknown>;
+};
 
-const emptyDraft: PromoDraft = {
-  id: "",
-  judul_promo: "",
-  deskripsi_promo: "",
-  banner_opsional: "",
+type MasterConfig = {
+  queryKey: string;
+  title: string;
+  description: string;
+  badge: string;
+  titleField: keyof DisplayMasterItem;
+  titleLabel: string;
+  optionalField: keyof DisplayMasterItem;
+  optionalLabel: string;
+  optionalAsTextarea?: boolean;
+  allowTextMedia?: boolean;
+  defaultMediaType?: "image" | "video" | "text";
+  requiredMessage: string;
+  api: MasterApi;
+};
+
+const mediaDefaults: Pick<
+  DisplayMasterItem,
+  "media_opsional" | "media_type" | "media_source_mode" | "media_link_source" | "text_style" | "isActive"
+> = {
   media_opsional: "",
   media_type: "video",
   media_source_mode: "attach_link",
   media_link_source: "youtube",
-  media_resolved_url: "",
   text_style: "gold",
   isActive: true,
 };
 
-export default function Promos() {
+export default function DisplayMediaMasterPage({ config }: { config: MasterConfig }) {
   const qc = useQueryClient();
   const mediaFileRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<PromoDraft>(emptyDraft);
-  const [confirm, setConfirm] = useState<Promo | null>(null);
-  const [preview, setPreview] = useState<Promo | null>(null);
+  const [draft, setDraft] = useState<DisplayMasterItem>(() => buildEmptyDraft(config));
+  const [confirm, setConfirm] = useState<DisplayMasterItem | null>(null);
+  const [preview, setPreview] = useState<DisplayMasterItem | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
 
-  const { data: promos = [], isLoading } = useQuery({
-    queryKey: ["promos"],
-    queryFn: listPromos,
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: [config.queryKey],
+    queryFn: config.api.list,
   });
-  const filteredPromos = useMemo(() => {
+
+  const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return promos.filter((promo) => {
+    return rows.filter((item) => {
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "on" ? promo.isActive !== false : promo.isActive === false);
+        (statusFilter === "on" ? item.isActive !== false : item.isActive === false);
       if (!matchesStatus) return false;
-      return (
-        !query ||
-        [
-          promo.judul_promo,
-          promo.deskripsi_promo,
-          promo.banner_opsional,
-          promo.media_opsional,
-        ].join(" ").toLowerCase().includes(query)
-      );
+      if (!query) return true;
+      return [
+        getStringValue(item, config.titleField),
+        getStringValue(item, config.optionalField),
+        item.media_opsional,
+      ].join(" ").toLowerCase().includes(query);
     });
-  }, [promos, search, statusFilter]);
+  }, [config.optionalField, config.titleField, rows, search, statusFilter]);
 
   const openNew = () => {
-    setDraft(emptyDraft);
+    setDraft(buildEmptyDraft(config));
     setOpen(true);
   };
 
-  const openEdit = (promo: Promo) => {
+  const openEdit = (item: DisplayMasterItem) => {
     setDraft({
-      ...emptyDraft,
-      ...promo,
-      media_type: promo.media_type || (promo.source_type === "text" ? "text" : promo.source_type === "image" ? "image" : "video"),
-      media_source_mode: promo.media_source_mode || (promo.media_opsional?.includes("/uploads/") ? "upload_file" : "attach_link"),
-      media_link_source: promo.media_link_source || inferLinkSource(promo.media_opsional),
-      text_style: promo.text_style || "gold",
+      ...buildEmptyDraft(config),
+      ...item,
+      media_type: item.media_type || (item.source_type === "text" ? "text" : item.source_type === "image" ? "image" : "video"),
+      media_source_mode: item.media_source_mode || (item.media_opsional?.includes("/uploads/") ? "upload_file" : "attach_link"),
+      media_link_source: item.media_link_source || inferLinkSource(item.media_opsional),
+      text_style: item.text_style || "gold",
     });
     setOpen(true);
   };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!draft.judul_promo.trim()) throw new Error("Judul promo wajib diisi");
-      const isText = draft.media_type === "text";
-      if (isText && !draft.deskripsi_promo.trim()) throw new Error("Deskripsi promo wajib diisi untuk tipe TEXT");
-      if (!isText && !draft.media_opsional.trim()) throw new Error("Media promo wajib diisi");
-      const payload: Partial<Promo> = {
-        judul_promo: draft.judul_promo.trim(),
-        deskripsi_promo: draft.deskripsi_promo?.trim() || "",
-        banner_opsional: "",
-        media_opsional: isText ? "" : draft.media_opsional?.trim() || "",
+      if (!getStringValue(draft, config.titleField).trim()) throw new Error(config.requiredMessage);
+      const isText = config.allowTextMedia && draft.media_type === "text";
+      if (isText && !getStringValue(draft, config.optionalField).trim()) throw new Error(`${config.optionalLabel} wajib diisi untuk tipe TEXT`);
+      if (!isText && !draft.media_opsional.trim()) throw new Error("Media wajib diisi");
+
+      const payload: Partial<DisplayMasterItem> = {
+        [config.titleField]: getStringValue(draft, config.titleField).trim(),
+        [config.optionalField]: getStringValue(draft, config.optionalField).trim(),
+        media_opsional: isText ? "" : draft.media_opsional.trim(),
         media_type: draft.media_type || "video",
         media_source_mode: isText ? "attach_link" : draft.media_source_mode || "attach_link",
         media_link_source: !isText && draft.media_source_mode === "attach_link" ? draft.media_link_source || "" : "",
         text_style: draft.text_style || "gold",
         isActive: draft.isActive,
       };
-      return draft.id ? updatePromo(draft.id, payload) : createPromo(payload);
+
+      return draft.id ? config.api.update(draft.id, payload) : config.api.create(payload);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["promos"] });
+      qc.invalidateQueries({ queryKey: [config.queryKey] });
       qc.invalidateQueries({ queryKey: ["display"] });
       setOpen(false);
-      toast.success("Promo disimpan");
+      toast.success("Data disimpan");
     },
-    onError: (error: any) => toast.error(error?.message || "Gagal menyimpan promo"),
+    onError: (error: any) => toast.error(error?.message || "Gagal menyimpan data"),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => deletePromo(id),
+    mutationFn: async (id: string) => config.api.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["promos"] });
+      qc.invalidateQueries({ queryKey: [config.queryKey] });
       qc.invalidateQueries({ queryKey: ["display"] });
-      toast.success("Promo dihapus");
+      toast.success("Data dihapus");
     },
-    onError: (error: any) => toast.error(error?.message || "Gagal menghapus promo"),
+    onError: (error: any) => toast.error(error?.message || "Gagal menghapus data"),
   });
 
   const uploadMutation = useMutation({
@@ -155,19 +173,16 @@ export default function Promos() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async (promo: Promo & { next: boolean }) => updatePromo(promo.id, { ...promo, isActive: promo.next }),
+    mutationFn: async (item: DisplayMasterItem & { next: boolean }) => config.api.update(item.id, { ...item, isActive: item.next }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["promos"] });
+      qc.invalidateQueries({ queryKey: [config.queryKey] });
       qc.invalidateQueries({ queryKey: ["display"] });
     },
   });
 
   return (
     <>
-      <PageHeader
-        title="Master Promo"
-        description="Kelola Promo yang ingin tampil di Display TV."
-      />
+      <PageHeader title={config.title} description={config.description} />
 
       <Card className="mb-4 border-border/70 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -190,7 +205,7 @@ export default function Promos() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Cari judul promo, deskripsi, banner, atau media..."
+                placeholder={`Cari ${config.title.toLowerCase()}, media...`}
                 className="pl-9"
               />
             </div>
@@ -202,38 +217,36 @@ export default function Promos() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {filteredPromos.map((promo) => (
-          <Card key={promo.id} className="overflow-hidden border-border/70">
-            <button type="button" className="group block aspect-video w-full overflow-hidden bg-secondary/70 text-left" onClick={() => setPreview(promo)}>
+        {filteredRows.map((item) => (
+          <Card key={item.id} className="overflow-hidden border-border/70">
+            <button type="button" className="group block aspect-video w-full overflow-hidden bg-secondary/70 text-left" onClick={() => setPreview(item)}>
               <div className="relative h-full w-full">
-                <PromoPoster promo={promo} />
+                <Poster item={item} title={getStringValue(item, config.titleField)} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
                 <PlayCircle className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 text-white/85 opacity-0 transition-opacity group-hover:opacity-100" />
                 <div className="absolute inset-x-0 bottom-0 p-4">
                   <span className="rounded-full border border-amber-300/40 bg-amber-400/25 px-3 py-1 text-xs font-semibold text-amber-50 shadow-[0_0_22px_rgba(251,191,36,0.28)] backdrop-blur">
-                    PROMO
+                    {config.badge}
                   </span>
-                  <p className="mt-4 line-clamp-2 text-lg font-semibold text-white">{promo.judul_promo}</p>
-                  <p className="mt-1 line-clamp-1 text-xs text-white/70">
-                    {promo.media_opsional || promo.banner_opsional || "Tanpa media/banner"}
-                  </p>
+                  <p className="mt-4 line-clamp-2 text-lg font-semibold text-white">{getStringValue(item, config.titleField)}</p>
+                  <p className="mt-1 line-clamp-1 text-xs text-white/70">{item.media_opsional || "Tanpa media"}</p>
                 </div>
               </div>
             </button>
             <div className="p-4">
               <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
-                {promo.deskripsi_promo || "Tanpa deskripsi"}
+                {getStringValue(item, config.optionalField) || "Tanpa deskripsi"}
               </p>
               <div className="mt-4 flex items-center justify-between">
                 <Switch
-                  checked={promo.isActive}
-                  onCheckedChange={(value) => toggleMutation.mutate({ ...promo, next: value })}
+                  checked={item.isActive}
+                  onCheckedChange={(value) => toggleMutation.mutate({ ...item, next: value })}
                 />
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(promo)}>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setConfirm(promo)}>
+                  <Button variant="ghost" size="icon" onClick={() => setConfirm(item)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
@@ -242,11 +255,11 @@ export default function Promos() {
           </Card>
         ))}
 
-        {!isLoading && filteredPromos.length === 0 ? (
+        {!isLoading && filteredRows.length === 0 ? (
           <Card className="col-span-full border-dashed p-12 text-center">
-            <Megaphone className="mx-auto h-10 w-10 text-muted-foreground" />
-            <p className="mt-3 text-sm font-medium">{promos.length ? "Promo tidak ditemukan" : "Belum ada promo"}</p>
-            <p className="text-xs text-muted-foreground">Tambahkan promo atau ubah kata kunci pencarian.</p>
+            <ImagePlay className="mx-auto h-10 w-10 text-muted-foreground" />
+            <p className="mt-3 text-sm font-medium">{rows.length ? "Data tidak ditemukan" : "Belum ada data"}</p>
+            <p className="text-xs text-muted-foreground">Tambahkan data atau ubah kata kunci pencarian.</p>
           </Card>
         ) : null}
       </div>
@@ -254,13 +267,18 @@ export default function Promos() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[calc(100vh-64px)] max-w-2xl overflow-y-auto p-0">
           <DialogHeader>
-            <DialogTitle className="px-6 pt-6 md:px-8 md:pt-8">{draft.id ? "Edit Promo" : "Tambah Promo"}</DialogTitle>
+            <DialogTitle className="px-6 pt-6 md:px-8 md:pt-8">{draft.id ? `Edit ${config.title}` : `Tambah ${config.title}`}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 px-6 py-5 md:px-8 md:py-6">
             <div className="space-y-2">
-              <Label>Judul Promo</Label>
-              <Input value={draft.judul_promo} onChange={(event) => setDraft({ ...draft, judul_promo: event.target.value })} />
+              <Label>{config.titleLabel}</Label>
+              <Input
+                value={getStringValue(draft, config.titleField)}
+                onChange={(event) => setDraft({ ...draft, [config.titleField]: event.target.value })}
+              />
             </div>
+            {!config.allowTextMedia ? <OptionalField config={config} draft={draft} setDraft={setDraft} /> : null}
+
             <div className="space-y-3 rounded-2xl border border-border/70 p-4">
               <div>
                 <Label>Source Media</Label>
@@ -268,11 +286,7 @@ export default function Promos() {
                   <Button
                     type="button"
                     variant="outline"
-                    className={
-                      draft.media_type !== "text" && draft.media_source_mode === "upload_file"
-                        ? "border-2 border-sky-300 bg-sky-50 text-sky-900 ring-2 ring-sky-400 dark:bg-sky-900 dark:border-sky-500 dark:text-sky-100 dark:ring-sky-400 hover:bg-sky-100 hover:border-sky-400 dark:hover:bg-sky-800 shadow-none"
-                        : "border-2 border-border bg-white text-sky-900 dark:bg-zinc-900 dark:text-sky-100 hover:bg-sky-50 hover:border-sky-300 dark:hover:bg-zinc-800 shadow-none"
-                    }
+                    className={getModeButtonClass(draft.media_type !== "text" && draft.media_source_mode === "upload_file")}
                     onClick={() => setDraft({ ...draft, media_type: draft.media_type === "text" ? "video" : draft.media_type, media_source_mode: "upload_file", media_link_source: "" })}
                   >
                     Upload File
@@ -280,23 +294,21 @@ export default function Promos() {
                   <Button
                     type="button"
                     variant="outline"
-                    className={
-                      draft.media_type !== "text" && draft.media_source_mode === "attach_link"
-                        ? "border-2 border-sky-300 bg-sky-50 text-sky-900 ring-2 ring-sky-400 dark:bg-sky-900 dark:border-sky-500 dark:text-sky-100 dark:ring-sky-400 hover:bg-sky-100 hover:border-sky-400 dark:hover:bg-sky-800 shadow-none"
-                        : "border-2 border-border bg-white text-sky-900 dark:bg-zinc-900 dark:text-sky-100 hover:bg-sky-50 hover:border-sky-300 dark:hover:bg-zinc-800 shadow-none"
-                    }
+                    className={getModeButtonClass(draft.media_type !== "text" && draft.media_source_mode === "attach_link")}
                     onClick={() => setDraft({ ...draft, media_type: draft.media_type === "text" ? "video" : draft.media_type, media_source_mode: "attach_link", media_link_source: draft.media_link_source || "youtube" })}
                   >
                     Attach Link
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={getModeButtonClass(draft.media_type === "text")}
-                    onClick={() => setDraft({ ...draft, media_type: "text", media_opsional: "", media_source_mode: "attach_link", media_link_source: "" })}
-                  >
-                    Text Slide
-                  </Button>
+                  {config.allowTextMedia ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={getModeButtonClass(draft.media_type === "text")}
+                      onClick={() => setDraft({ ...draft, media_type: "text", media_opsional: "", media_source_mode: "attach_link", media_link_source: "" })}
+                    >
+                      Text Slide
+                    </Button>
+                  ) : null}
                 </div>
               </div>
 
@@ -320,7 +332,7 @@ export default function Promos() {
                     <SelectContent>
                       <SelectItem value="image">Gambar</SelectItem>
                       <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="text">Text</SelectItem>
+                      {config.allowTextMedia ? <SelectItem value="text">Text</SelectItem> : null}
                     </SelectContent>
                   </Select>
                 </div>
@@ -352,23 +364,12 @@ export default function Promos() {
                 ) : null}
               </div>
 
-              {draft.media_type === "text" ? (
-                <div className="space-y-2">
-                  <Label>
-                    Deskripsi Promo
-                    <span className="ml-1 text-destructive">*</span>
-                  </Label>
-                  <Textarea
-                    value={draft.deskripsi_promo}
-                    onChange={(event) => setDraft({ ...draft, deskripsi_promo: event.target.value })}
-                    placeholder="Wajib diisi untuk tipe TEXT"
-                    className="min-h-[84px] md:min-h-[104px]"
-                  />
-                </div>
+              {config.allowTextMedia && draft.media_type === "text" ? (
+                <OptionalField config={config} draft={draft} setDraft={setDraft} required />
               ) : null}
 
               {draft.media_type === "text" ? (
-                <TextSlidePreview title={draft.judul_promo || "Judul Promo"} description={draft.deskripsi_promo} styleName={draft.text_style || "gold"} />
+                <TextSlidePreview title={getStringValue(draft, config.titleField) || config.title} description={getStringValue(draft, config.optionalField)} styleName={draft.text_style || "gold"} />
               ) : draft.media_source_mode === "upload_file" ? (
                 <div className="space-y-2">
                   <Label>Media</Label>
@@ -392,11 +393,7 @@ export default function Promos() {
                     <Upload className="mr-2 h-4 w-4" />
                     {uploadMutation.isPending ? "Uploading..." : "Pilih Media dari Komputer"}
                   </Button>
-                  <Input
-                    value={draft.media_opsional}
-                    readOnly
-                    placeholder="URL media hasil upload akan muncul di sini"
-                  />
+                  <Input value={draft.media_opsional} readOnly placeholder="URL media hasil upload akan muncul di sini" />
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -410,9 +407,10 @@ export default function Promos() {
                 </div>
               )}
             </div>
+
             <div className="flex items-center gap-3 rounded-lg border border-border p-3">
               <Switch checked={draft.isActive} onCheckedChange={(value) => setDraft({ ...draft, isActive: value })} />
-              <Label className="!m-0">Aktifkan promo di Display TV</Label>
+              <Label className="!m-0">Aktifkan di Display TV</Label>
             </div>
           </div>
           <DialogFooter className="border-t border-border/70 px-6 py-4 md:px-8">
@@ -425,8 +423,8 @@ export default function Promos() {
       <AlertDialog open={Boolean(confirm)} onOpenChange={(value) => !value && setConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus promo?</AlertDialogTitle>
-            <AlertDialogDescription>Promo yang dihapus tidak bisa dikembalikan.</AlertDialogDescription>
+            <AlertDialogTitle>Hapus data?</AlertDialogTitle>
+            <AlertDialogDescription>Data yang dihapus tidak bisa dikembalikan.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
@@ -443,23 +441,124 @@ export default function Promos() {
       <Dialog open={Boolean(preview)} onOpenChange={(value) => !value && setPreview(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Preview Promo</DialogTitle>
+            <DialogTitle>Preview Media</DialogTitle>
           </DialogHeader>
           {preview ? (
             <MediaPreview
-              url={preview.display_url || preview.media_opsional || preview.banner_opsional}
-              title={preview.judul_promo}
+              url={preview.display_url || preview.media_opsional}
+              title={getStringValue(preview, config.titleField)}
               sourceType={preview.source_type}
             />
           ) : null}
-          <div className="text-sm">
-            <p className="font-medium">{preview?.judul_promo}</p>
-            <p className="text-xs text-muted-foreground break-all">{preview?.media_opsional || preview?.banner_opsional}</p>
-          </div>
         </DialogContent>
       </Dialog>
     </>
   );
+}
+
+export function buildDisplayMediaMasterConfig(config: MasterConfig) {
+  return config;
+}
+
+function buildEmptyDraft(config: MasterConfig): DisplayMasterItem {
+  const defaultMediaType = config.defaultMediaType || "video";
+  return {
+    id: "",
+    [config.titleField]: "",
+    [config.optionalField]: "",
+    ...mediaDefaults,
+    media_type: defaultMediaType,
+    media_source_mode: defaultMediaType === "text" ? "attach_link" : mediaDefaults.media_source_mode,
+    media_link_source: defaultMediaType === "text" ? "" : mediaDefaults.media_link_source,
+  };
+}
+
+function getStringValue(item: DisplayMasterItem, field: keyof DisplayMasterItem) {
+  return String(item[field] || "");
+}
+
+function OptionalField({
+  config,
+  draft,
+  setDraft,
+  required = false,
+}: {
+  config: MasterConfig;
+  draft: DisplayMasterItem;
+  setDraft: (value: DisplayMasterItem) => void;
+  required?: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>
+        {config.optionalLabel}
+        {required ? <span className="ml-1 text-destructive">*</span> : null}
+      </Label>
+      {config.optionalAsTextarea ? (
+        <Textarea
+          value={getStringValue(draft, config.optionalField)}
+          onChange={(event) => setDraft({ ...draft, [config.optionalField]: event.target.value })}
+          placeholder={required ? "Wajib diisi untuk tipe TEXT" : "Opsional"}
+          className="min-h-[84px] md:min-h-[104px]"
+        />
+      ) : (
+        <Input
+          value={getStringValue(draft, config.optionalField)}
+          onChange={(event) => setDraft({ ...draft, [config.optionalField]: event.target.value })}
+          placeholder={required ? "Wajib diisi untuk tipe TEXT" : "Opsional"}
+        />
+      )}
+    </div>
+  );
+}
+
+function TextStyleSelect({
+  value,
+  onChange,
+}: {
+  value: NonNullable<DisplayMasterItem["text_style"]>;
+  onChange: (value: NonNullable<DisplayMasterItem["text_style"]>) => void;
+}) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Pilih style text" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="gold">Luxury Gold</SelectItem>
+        <SelectItem value="midnight">Midnight Premium</SelectItem>
+        <SelectItem value="emerald">Emerald Trust</SelectItem>
+        <SelectItem value="light">Clean Light</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function TextSlidePreview({ title, description, styleName }: { title: string; description: string; styleName: string }) {
+  return (
+    <div className={`relative aspect-video overflow-hidden rounded-2xl border p-6 ${getTextSlideClass(styleName)}`}>
+      <div className="absolute inset-0 opacity-50 [background:radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_26%),radial-gradient(circle_at_82%_78%,rgba(255,255,255,0.16),transparent_28%)]" />
+      <div className="relative flex h-full flex-col justify-center">
+        <h3 className="line-clamp-2 text-3xl font-black tracking-[-0.06em]">{title}</h3>
+        <p className="mt-4 line-clamp-4 max-w-xl text-base font-semibold leading-relaxed opacity-80">
+          {description || "Isi/deskripsi akan tampil sebagai slide premium di Display TV."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function getTextSlideClass(styleName = "gold") {
+  if (styleName === "light") return "border-slate-200 bg-gradient-to-br from-white via-slate-100 to-amber-50 text-slate-950";
+  if (styleName === "emerald") return "border-emerald-300/35 bg-gradient-to-br from-emerald-950 via-slate-950 to-emerald-800 text-emerald-50";
+  if (styleName === "midnight") return "border-sky-300/25 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-sky-50";
+  return "border-amber-300/35 bg-gradient-to-br from-[#17120a] via-[#35250c] to-[#070604] text-amber-50";
+}
+
+function getModeButtonClass(active: boolean) {
+  return active
+    ? "border-2 border-sky-300 bg-sky-50 text-sky-900 ring-2 ring-sky-400 dark:bg-sky-900 dark:border-sky-500 dark:text-sky-100 dark:ring-sky-400 hover:bg-sky-100 hover:border-sky-400 dark:hover:bg-sky-800 shadow-none"
+    : "border-2 border-border bg-white text-sky-900 dark:bg-zinc-900 dark:text-sky-100 hover:bg-sky-50 hover:border-sky-300 dark:hover:bg-zinc-800 shadow-none";
 }
 
 function MediaPreview({ url, title, sourceType }: { url?: string; title: string; sourceType?: string }) {
@@ -490,102 +589,46 @@ function MediaPreview({ url, title, sourceType }: { url?: string; title: string;
   );
 }
 
-function PromoPoster({ promo }: { promo: Promo }) {
-  const source = promo.display_url || promo.media_opsional || promo.banner_opsional || "";
-  const youtubeId = getYoutubeId(promo.media_opsional || promo.banner_opsional);
+function Poster({ item, title }: { item: DisplayMasterItem; title: string }) {
+  const source = item.display_url || item.media_opsional || "";
+  const youtubeId = getYoutubeId(item.media_opsional);
 
-  if (promo.source_type === "text" || promo.media_type === "text") {
-    return <TextSlidePreview title={promo.judul_promo} description={promo.deskripsi_promo} styleName={promo.text_style || "gold"} />;
+  if (item.source_type === "text" || item.media_type === "text") {
+    return <TextSlidePreview title={title} description={getTextDescription(item)} styleName={item.text_style || "gold"} />;
   }
 
   if (youtubeId) {
-    return <img src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} alt={promo.judul_promo} className="h-full w-full object-cover" />;
+    return <img src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} alt={title} className="h-full w-full object-cover" />;
   }
 
-  const driveId = getGoogleDriveId(promo.media_opsional || promo.banner_opsional);
-  if (driveId) {
-    return <DrivePoster title={promo.judul_promo} subtitle="Google Drive Promo" />;
+  if (item.source_type === "image" || /\.(png|jpe?g|gif|webp|avif|svg)(\?|$)/i.test(source)) {
+    return <img src={source} alt={title} className="h-full w-full object-cover" />;
   }
 
-  if (promo.source_type === "image" || /\.(png|jpe?g|gif|webp|avif|svg)(\?|$)/i.test(source)) {
-    return <img src={source} alt={promo.judul_promo} className="h-full w-full object-cover" />;
-  }
-
-  if (promo.source_type === "video" || /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(source)) {
+  if (item.source_type === "video" || /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(source)) {
     return <video src={source} className="h-full w-full object-cover" muted playsInline preload="metadata" />;
   }
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,hsl(var(--accent)/0.35),transparent_32%),linear-gradient(135deg,hsl(var(--secondary)),hsl(var(--card)))]">
       <div className="rounded-2xl border border-border/60 bg-background/70 p-5 text-center shadow-lg backdrop-blur">
-        <Megaphone className="mx-auto h-9 w-9 text-accent" />
-        <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Preview Promo</p>
+        <ImagePlay className="mx-auto h-9 w-9 text-accent" />
+        <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Preview Media</p>
       </div>
     </div>
   );
 }
 
-function TextStyleSelect({
-  value,
-  onChange,
-}: {
-  value: NonNullable<Promo["text_style"]>;
-  onChange: (value: NonNullable<Promo["text_style"]>) => void;
-}) {
+function getTextDescription(item: DisplayMasterItem) {
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger>
-        <SelectValue placeholder="Pilih style text" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="gold">Luxury Gold</SelectItem>
-        <SelectItem value="midnight">Midnight Premium</SelectItem>
-        <SelectItem value="emerald">Emerald Trust</SelectItem>
-        <SelectItem value="light">Clean Light</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-}
-
-function TextSlidePreview({ title, description, styleName }: { title: string; description: string; styleName: string }) {
-  return (
-    <div className={`relative aspect-video overflow-hidden rounded-2xl border p-6 ${getTextSlideClass(styleName)}`}>
-      <div className="absolute inset-0 opacity-50 [background:radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_26%),radial-gradient(circle_at_82%_78%,rgba(255,255,255,0.16),transparent_28%)]" />
-      <div className="relative flex h-full flex-col justify-center">
-        <h3 className="line-clamp-2 text-3xl font-black tracking-[-0.06em]">{title}</h3>
-        <p className="mt-4 line-clamp-4 max-w-xl text-base font-semibold leading-relaxed opacity-80">
-          {description || "Deskripsi akan tampil sebagai slide premium di Display TV."}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function getTextSlideClass(styleName = "gold") {
-  if (styleName === "light") return "border-slate-200 bg-gradient-to-br from-white via-slate-100 to-amber-50 text-slate-950";
-  if (styleName === "emerald") return "border-emerald-300/35 bg-gradient-to-br from-emerald-950 via-slate-950 to-emerald-800 text-emerald-50";
-  if (styleName === "midnight") return "border-sky-300/25 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-sky-50";
-  return "border-amber-300/35 bg-gradient-to-br from-[#17120a] via-[#35250c] to-[#070604] text-amber-50";
-}
-
-function getModeButtonClass(active: boolean) {
-  return active
-    ? "border-2 border-sky-300 bg-sky-50 text-sky-900 ring-2 ring-sky-400 dark:bg-sky-900 dark:border-sky-500 dark:text-sky-100 dark:ring-sky-400 hover:bg-sky-100 hover:border-sky-400 dark:hover:bg-sky-800 shadow-none"
-    : "border-2 border-border bg-white text-sky-900 dark:bg-zinc-900 dark:text-sky-100 hover:bg-sky-50 hover:border-sky-300 dark:hover:bg-zinc-800 shadow-none";
-}
-
-function DrivePoster({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_28%_20%,rgba(251,191,36,0.34),transparent_30%),linear-gradient(135deg,#151515,#2b2414_48%,#090909)]">
-      <div className="absolute -left-10 top-8 h-32 w-32 rounded-full bg-amber-300/20 blur-3xl" />
-      <div className="absolute bottom-0 right-0 h-36 w-36 rounded-full bg-sky-300/10 blur-3xl" />
-      <div className="relative rounded-2xl border border-amber-300/25 bg-black/35 px-6 py-5 text-center shadow-2xl backdrop-blur-md">
-        <Megaphone className="mx-auto h-10 w-10 text-amber-200" />
-        <p className="mt-3 text-xs font-bold uppercase tracking-[0.28em] text-amber-100">Drive Preview</p>
-        <p className="mt-2 max-w-56 truncate text-sm font-semibold text-white">{title}</p>
-        <p className="mt-1 text-xs text-white/60">{subtitle}</p>
-      </div>
-    </div>
+    item.isi_edukasi ||
+    item.isi_tips ||
+    item.isi_testimoni ||
+    item.isi_insight ||
+    item.deskripsi_simulasi ||
+    item.isi_info ||
+    item.kategori_produk ||
+    ""
   );
 }
 
@@ -596,7 +639,7 @@ function detectPreviewType(url: string) {
   return "embed";
 }
 
-function inferLinkSource(url = ""): Promo["media_link_source"] {
+function inferLinkSource(url = ""): DisplayMasterItem["media_link_source"] {
   if (getYoutubeId(url)) return "youtube";
   if (getGoogleDriveId(url)) return "google_drive";
   if (/firebase|firebasestorage\.googleapis\.com/i.test(url)) return "firebase";

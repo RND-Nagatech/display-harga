@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Package,
   Film,
   Tags,
   Megaphone,
+  Gem,
+  BookOpen,
+  Lightbulb,
+  MessageSquareQuote,
+  TrendingUp,
+  Calculator,
+  RefreshCcw,
   Tv,
   Users,
   Settings as SettingsIcon,
@@ -19,23 +27,42 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { getSystem } from "@/lib/backend";
-import { Button } from "@/components/ui/button";
 
-const nav = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+type NavItem = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  external?: boolean;
+};
+
+const masterNav: NavItem[] = [
   { to: "/categories", label: "Master Harga Emas", icon: Package },
-  { to: "/content-types", label: "Master Jenis Konten", icon: Tags },
-  { to: "/media", label: "Master Konten", icon: Film },
+  // { to: "/content-types", label: "Master Jenis Konten", icon: Tags },
+  // { to: "/media", label: "Master Konten", icon: Film },
   { to: "/promos", label: "Master Promo", icon: Megaphone },
+  { to: "/showcase", label: "Master Showcase Produk", icon: Gem },
+  { to: "/edukasi", label: "Master Edukasi Emas", icon: BookOpen },
+  { to: "/tips", label: "Master Tips Emas", icon: Lightbulb },
+  { to: "/testimoni", label: "Master Testimoni", icon: MessageSquareQuote },
+  { to: "/insight", label: "Insight Pasar", icon: TrendingUp },
+  { to: "/simulasi", label: "Simulasi Harga", icon: Calculator },
+  { to: "/info-buyback", label: "Info Terbaru", icon: RefreshCcw },
+];
+
+const nav: NavItem[] = [
+  { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/display", label: "Display TV", icon: Tv, external: true },
   { to: "/users", label: "Manage User", icon: Users },
   { to: "/settings", label: "Pengaturan", icon: SettingsIcon },
 ];
 
+const mobileNav = [nav[0], ...masterNav, ...nav.slice(1)];
+
 export default function AdminLayout() {
   const loc = useLocation();
   const { user, isAdmin, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [masterOpen, setMasterOpen] = useState(() => masterNav.some((item) => item.to === loc.pathname));
   const { data: settings } = useQuery({
     queryKey: ["system"],
     queryFn: getSystem,
@@ -62,8 +89,78 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1.5 px-3 py-4">
-          {nav.map((n) => {
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <nav className="space-y-1.5 px-3 py-4">
+          {nav.slice(0, 1).map((n) => {
+            const Icon = n.icon;
+            const active = loc.pathname === n.to;
+            if (n.to === "/users" && !isAdmin) return null;
+            return (
+              <NavLink
+                key={n.to}
+                to={n.to!}
+                target={n.external ? "_blank" : undefined}
+                className={cn(
+                  "group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium tracking-[-0.005em] transition-all duration-200",
+                  active
+                    ? "bg-gradient-primary text-primary-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/75 hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <Icon className={cn("h-4 w-4", active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+                <span className="flex-1">{n.label}</span>
+                {n.external && (
+                  <span className={cn("text-[10px] uppercase tracking-wider", active ? "text-primary-foreground/75" : "text-muted-foreground")}>tab</span>
+                )}
+              </NavLink>
+            );
+          })}
+
+          <div className="pt-1">
+            <button
+              type="button"
+              className={cn(
+                "group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium tracking-[-0.005em] transition-all duration-200",
+                masterNav.some((item) => item.to === loc.pathname)
+                  ? "bg-sidebar-accent/80 text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/75 hover:text-sidebar-accent-foreground"
+              )}
+              onClick={() => setMasterOpen((current) => !current)}
+            >
+              <Package className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+              <span className="flex-1 text-left">Data Master</span>
+              <ChevronDown className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform",
+                masterOpen ? "rotate-0" : "-rotate-90"
+              )} />
+            </button>
+
+            {masterOpen ? (
+              <div className="mt-1.5 space-y-1 pl-4">
+                {masterNav.map((item) => {
+                  const Icon = item.icon;
+                  const active = loc.pathname === item.to;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={cn(
+                        "group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium tracking-[-0.005em] transition-all duration-200",
+                        active
+                          ? "bg-gradient-primary text-primary-foreground"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/75 hover:text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <Icon className={cn("h-3.5 w-3.5", active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+                      <span className="flex-1">{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+
+          {nav.slice(1).map((n) => {
             const Icon = n.icon;
             const active = loc.pathname === n.to;
             if (n.to === "/users" && !isAdmin) return null;
@@ -87,7 +184,8 @@ export default function AdminLayout() {
               </NavLink>
             );
           })}
-        </nav>
+          </nav>
+        </div>
 
       </aside>
 
@@ -150,7 +248,7 @@ export default function AdminLayout() {
           </div>
         </div>
         <div className="flex gap-1 overflow-x-auto border-b border-border/70 bg-card/90 px-2 py-2 backdrop-blur lg:hidden">
-          {nav.map((n) => {
+          {mobileNav.map((n) => {
             const Icon = n.icon;
             const active = loc.pathname === n.to;
             if (n.to === "/users" && !isAdmin) return null;

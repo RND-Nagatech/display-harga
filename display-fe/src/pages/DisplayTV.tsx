@@ -116,7 +116,7 @@ export default function DisplayTV() {
   }, [heroMedia.length, mediaIndex]);
 
   useEffect(() => {
-    setIsHeroMediaReady(!activeHeroMedia);
+    setIsHeroMediaReady(!activeHeroMedia || activeHeroMedia.type === "text" || activeHeroMedia.sourceType === "text");
   }, [activeHeroMedia?.id]);
 
   useEffect(() => {
@@ -126,10 +126,10 @@ export default function DisplayTV() {
 
     let timer: number | undefined;
 
-    if (activeHeroMedia.type === "image") {
+    if (activeHeroMedia.type === "image" || activeHeroMedia.type === "text" || activeHeroMedia.sourceType === "text") {
       timer = window.setTimeout(() => {
         setMediaIndex((current) => (current + 1) % heroMedia.length);
-      }, 10000);
+      }, (activeHeroMedia.durationSec && activeHeroMedia.durationSec > 0 ? activeHeroMedia.durationSec : 10) * 1000);
     } else if (activeHeroMedia.durationSec && activeHeroMedia.durationSec > 0) {
       timer = window.setTimeout(() => {
         setMediaIndex((current) => (current + 1) % heroMedia.length);
@@ -244,7 +244,9 @@ export default function DisplayTV() {
             <div className={`tv-monolith-hero-media ${activeHeroMedia && !isHeroMediaReady ? "is-media-loading" : ""}`.trim()}>
               {!activeHeroMedia || !isHeroMediaReady ? <HeroFallback /> : null}
 
-              {activeHeroMedia && activeDriveUrl && !shouldUseDriveFallback ? (
+              {activeHeroMedia?.type === "text" || activeHeroMedia?.sourceType === "text" ? (
+                <TextHeroSlide media={activeHeroMedia} />
+              ) : activeHeroMedia && activeDriveUrl && !shouldUseDriveFallback ? (
                 <video
                   key={`${activeHeroMedia.id}-${mediaIndex}-drive-direct`}
                   ref={videoRef}
@@ -480,6 +482,20 @@ function HeroFallback() {
     <div className="tv-monolith-hero-image tv-monolith-hero-fallback">
       <img src={goldHeroImage} alt="Kotak perhiasan emas" className="tv-monolith-hero-photo" />
     </div>
+  );
+}
+
+function TextHeroSlide({ media }: { media: Media }) {
+  const styleName = media.textStyle || "gold";
+  return (
+    <article className={`tv-monolith-text-slide is-${styleName}`}>
+      <div className="tv-monolith-text-orb is-one" />
+      <div className="tv-monolith-text-orb is-two" />
+      <div className="tv-monolith-text-shell">
+        <h1>{media.label || "Informasi Toko Emas"}</h1>
+        <p>{media.description || "Informasi akan ditampilkan di layar TV toko."}</p>
+      </div>
+    </article>
   );
 }
 

@@ -9,6 +9,13 @@ import Categories from "./pages/Categories";
 import ContentTypes from "./pages/ContentTypes";
 import MediaPage from "./pages/Media";
 import Promos from "./pages/Promos";
+import Showcase from "./pages/Showcase";
+import Edukasi from "./pages/Edukasi";
+import Tips from "./pages/Tips";
+import Testimoni from "./pages/Testimoni";
+import Insight from "./pages/Insight";
+import Simulasi from "./pages/Simulasi";
+import InfoBuyback from "./pages/InfoBuyback";
 import Users from "./pages/Users";
 import SettingsPage from "./pages/SettingsPage";
 import DisplayTV from "./pages/DisplayTV";
@@ -41,6 +48,13 @@ const App = () => (
               <Route path="/content-types" element={<ContentTypes />} />
               <Route path="/media" element={<MediaPage />} />
               <Route path="/promos" element={<Promos />} />
+              <Route path="/showcase" element={<Showcase />} />
+              <Route path="/edukasi" element={<Edukasi />} />
+              <Route path="/tips" element={<Tips />} />
+              <Route path="/testimoni" element={<Testimoni />} />
+              <Route path="/insight" element={<Insight />} />
+              <Route path="/simulasi" element={<Simulasi />} />
+              <Route path="/info-buyback" element={<InfoBuyback />} />
               <Route path="/users" element={<Users />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>

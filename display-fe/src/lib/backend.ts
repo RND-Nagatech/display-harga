@@ -23,14 +23,15 @@ export type Category = {
 export type Media = {
   id: string;
   label: string;
-  type: "file" | "youtube" | "video" | "image" | "embed" | "promo" | "url";
+  type: "file" | "youtube" | "video" | "image" | "embed" | "promo" | "url" | "text";
   url?: string;
   sourceUrl?: string;
   embedUrl?: string;
   displayUrl?: string;
   sourceType?: string;
   description?: string;
-  origin?: "promo" | "content" | "media";
+  textStyle?: "gold" | "light" | "emerald" | "midnight";
+  origin?: "promo" | "content" | "media" | "showcase" | "edukasi" | "tips" | "testimoni" | "insight" | "simulasi" | "info_buyback";
   durationSec?: number;
   isActive: boolean;
 };
@@ -58,6 +59,38 @@ export type Promo = {
   deskripsi_promo: string;
   banner_opsional: string;
   media_opsional: string;
+  media_type?: "image" | "video" | "text";
+  media_source_mode?: "upload_file" | "attach_link";
+  media_link_source?: "youtube" | "firebase" | "google_drive" | "";
+  media_resolved_url?: string;
+  text_style?: "gold" | "light" | "emerald" | "midnight";
+  source_type?: string;
+  display_url?: string;
+  isActive: boolean;
+};
+
+export type DisplayMasterItem = {
+  id: string;
+  nama_produk?: string;
+  kategori_produk?: string;
+  judul_edukasi?: string;
+  isi_edukasi?: string;
+  judul_tips?: string;
+  isi_tips?: string;
+  nama_pelanggan?: string;
+  isi_testimoni?: string;
+  judul_insight?: string;
+  isi_insight?: string;
+  judul_simulasi?: string;
+  deskripsi_simulasi?: string;
+  judul_info?: string;
+  isi_info?: string;
+  media_opsional: string;
+  media_type?: "image" | "video" | "text";
+  media_source_mode?: "upload_file" | "attach_link";
+  media_link_source?: "youtube" | "firebase" | "google_drive" | "";
+  media_resolved_url?: string;
+  text_style?: "gold" | "light" | "emerald" | "midnight";
   source_type?: string;
   display_url?: string;
   isActive: boolean;
@@ -171,6 +204,77 @@ export async function updatePromo(id: string, payload: Partial<Promo>) {
 export async function deletePromo(id: string) {
   await apiJson<ApiResponse<null>>(`/promos/${id}`, { method: "DELETE" });
 }
+
+function listDisplayMaster(path: string) {
+  return apiJson<ApiResponse<DisplayMasterItem[]>>(`/${path}`).then((r) => r.data);
+}
+
+function createDisplayMaster(path: string, payload: Partial<DisplayMasterItem>) {
+  return apiJson<ApiResponse<DisplayMasterItem>>(`/${path}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }).then((r) => r.data);
+}
+
+function updateDisplayMaster(path: string, id: string, payload: Partial<DisplayMasterItem>) {
+  return apiJson<ApiResponse<DisplayMasterItem>>(`/${path}/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  }).then((r) => r.data);
+}
+
+function deleteDisplayMaster(path: string, id: string) {
+  return apiJson<ApiResponse<null>>(`/${path}/${id}`, { method: "DELETE" });
+}
+
+export const showcaseApi = {
+  list: () => listDisplayMaster("showcases"),
+  create: (payload: Partial<DisplayMasterItem>) => createDisplayMaster("showcases", payload),
+  update: (id: string, payload: Partial<DisplayMasterItem>) => updateDisplayMaster("showcases", id, payload),
+  delete: (id: string) => deleteDisplayMaster("showcases", id),
+};
+
+export const edukasiApi = {
+  list: () => listDisplayMaster("edukasi"),
+  create: (payload: Partial<DisplayMasterItem>) => createDisplayMaster("edukasi", payload),
+  update: (id: string, payload: Partial<DisplayMasterItem>) => updateDisplayMaster("edukasi", id, payload),
+  delete: (id: string) => deleteDisplayMaster("edukasi", id),
+};
+
+export const tipsApi = {
+  list: () => listDisplayMaster("tips"),
+  create: (payload: Partial<DisplayMasterItem>) => createDisplayMaster("tips", payload),
+  update: (id: string, payload: Partial<DisplayMasterItem>) => updateDisplayMaster("tips", id, payload),
+  delete: (id: string) => deleteDisplayMaster("tips", id),
+};
+
+export const testimoniApi = {
+  list: () => listDisplayMaster("testimoni"),
+  create: (payload: Partial<DisplayMasterItem>) => createDisplayMaster("testimoni", payload),
+  update: (id: string, payload: Partial<DisplayMasterItem>) => updateDisplayMaster("testimoni", id, payload),
+  delete: (id: string) => deleteDisplayMaster("testimoni", id),
+};
+
+export const insightApi = {
+  list: () => listDisplayMaster("insight"),
+  create: (payload: Partial<DisplayMasterItem>) => createDisplayMaster("insight", payload),
+  update: (id: string, payload: Partial<DisplayMasterItem>) => updateDisplayMaster("insight", id, payload),
+  delete: (id: string) => deleteDisplayMaster("insight", id),
+};
+
+export const simulasiApi = {
+  list: () => listDisplayMaster("simulasi"),
+  create: (payload: Partial<DisplayMasterItem>) => createDisplayMaster("simulasi", payload),
+  update: (id: string, payload: Partial<DisplayMasterItem>) => updateDisplayMaster("simulasi", id, payload),
+  delete: (id: string) => deleteDisplayMaster("simulasi", id),
+};
+
+export const infoBuybackApi = {
+  list: () => listDisplayMaster("info-buyback"),
+  create: (payload: Partial<DisplayMasterItem>) => createDisplayMaster("info-buyback", payload),
+  update: (id: string, payload: Partial<DisplayMasterItem>) => updateDisplayMaster("info-buyback", id, payload),
+  delete: (id: string) => deleteDisplayMaster("info-buyback", id),
+};
 
 export async function uploadAsset(file: File) {
   const form = new FormData();
